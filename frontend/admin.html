@@ -351,7 +351,15 @@
             
             <!-- TAB: DASHBOARD -->
             <div id="tab-dashboard" class="tab-content" style="display: block;">
-                <h1 style="margin-bottom: 20px;">Panel Administrativo</h1>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <h1 style="margin: 0;">Panel Administrativo</h1>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label for="dashboard-month-filter" style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap;">Ver Periodo:</label>
+                        <select id="dashboard-month-filter" style="width: auto; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; font-size: 0.85rem; font-weight: 500; cursor: pointer; outline: none; transition: border-color 0.2s;">
+                            <option value="last30">Últimos 30 días</option>
+                        </select>
+                    </div>
+                </div>
                 
                 <!-- KPI Cards Grid -->
                 <div class="stats-grid" id="admin-stats">
@@ -376,7 +384,7 @@
                 <!-- Charts Grid -->
                 <div class="dashboard-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                     <div class="chart-container" style="background: var(--surface-color); padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid rgba(255,255,255,0.05); min-height: 350px; display: flex; flex-direction: column;">
-                        <h3 style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px;">📈 Ventas (Últimos 30 días)</h3>
+                        <h3 id="sales-chart-title" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px;">📈 Ventas (Últimos 30 días)</h3>
                         <div class="chart-wrapper" style="position: relative; flex-grow: 1; height: 260px; width: 100%;">
                             <canvas id="salesChart"></canvas>
                         </div>

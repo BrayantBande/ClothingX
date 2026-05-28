@@ -222,9 +222,48 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 });
 
+function populateMonthFilter() {
+    const select = document.getElementById('dashboard-month-filter');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="last30">Últimos 30 días</option>';
+    
+    const monthNames = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+    
+    const now = new Date();
+    let currentYear = now.getFullYear();
+    let currentMonth = now.getMonth();
+    
+    for (let i = 0; i < 12; i++) {
+        const year = currentYear;
+        const monthNum = currentMonth + 1;
+        const monthStr = monthNum < 10 ? `0${monthNum}` : `${monthNum}`;
+        const val = `${year}-${monthStr}`;
+        
+        const option = document.createElement('option');
+        option.value = val;
+        option.textContent = `${monthNames[currentMonth]} ${year}`;
+        select.appendChild(option);
+        
+        currentMonth--;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+    }
+    
+    select.addEventListener('change', () => {
+        loadDashboard();
+    });
+}
+
 async function init() {
     const statusDiv = document.getElementById('connection-status');
     try {
+        populateMonthFilter();
         await loadCategories();
         await loadBrands();
         await loadDashboard();
@@ -288,7 +327,15 @@ async function loadSettings() {
 
 async function loadDashboard() {
     try {
-        const statsRes = await fetch(`${API_URL}/admin/stats`);
+        const monthFilter = document.getElementById('dashboard-month-filter');
+        const selectedVal = monthFilter ? monthFilter.value : 'last30';
+        
+        let url = `${API_URL}/admin/stats`;
+        if (selectedVal !== 'last30') {
+            url += `?month=${selectedVal}`;
+        }
+        
+        const statsRes = await fetch(url);
         if (!statsRes.ok) return;
         const stats = await statsRes.json();
         
@@ -304,6 +351,17 @@ async function loadDashboard() {
         
         const criticalStockEl = document.getElementById('stat-critical-stock-count');
         if (criticalStockEl) criticalStockEl.innerText = `${stats.critical_stock.length} prod.`;
+        
+        // Actualizar título del gráfico
+        const salesChartTitle = document.getElementById('sales-chart-title');
+        if (salesChartTitle) {
+            if (selectedVal === 'last30') {
+                salesChartTitle.innerText = "📈 Ventas (Últimos 30 días)";
+            } else {
+                const selectedText = monthFilter.options[monthFilter.selectedIndex].text;
+                salesChartTitle.innerText = `📈 Ventas (${selectedText})`;
+            }
+        }
         
         // Renderizar Categorías y Marcas
         const catList = document.getElementById('stat-list-categories');
@@ -369,7 +427,9 @@ function renderCharts(salesHistory, topProducts) {
                     borderWidth: 3,
                     pointBackgroundColor: '#0066ff',
                     pointBorderColor: '#fff',
+                    pointRadius: 0,
                     pointHoverRadius: 6,
+                    pointHitRadius: 10,
                     fill: true,
                     backgroundColor: gradient,
                     tension: 0.4

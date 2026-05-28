@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api", tags=["Orders"])
 # --- ENDPOINT DE ESTADÍSTICAS ---
 
 @router.get("/admin/stats")
-def get_admin_stats(db: Session = Depends(get_db), current_admin: models.AdminUser = Depends(auth.get_current_admin)):
+def get_admin_stats(month: str = None, db: Session = Depends(get_db), current_admin: models.AdminUser = Depends(auth.get_current_admin)):
     total_shirts = db.query(models.Shirt).count()
     categories = db.query(models.Category).all()
     brands = db.query(models.Brand).all()
@@ -29,38 +29,82 @@ def get_admin_stats(db: Session = Depends(get_db), current_admin: models.AdminUs
         count = db.query(models.Shirt).filter(models.Shirt.brand.ilike(f"%{b.name}%")).count()
         stats_per_brand.append({"name": b.name, "count": count})
         
-    # --- MÉTRICAS DE VENTAS Y STOCK ADICIONALES ---
+    # --- FILTRO POR PERIODO (MES O ÚLTIMOS 30 DÍAS) ---
     now = datetime.now()
-    start_of_month = datetime(now.year, now.month, 1)
+    is_custom_month = False
     
-    # Ventas y órdenes del mes actual
-    monthly_orders_list = db.query(models.Order).filter(models.Order.created_at >= start_of_month).all()
-    monthly_sales = sum(o.total_price for o in monthly_orders_list)
-    monthly_orders_count = len(monthly_orders_list)
-    
-    # Historial de ventas de los últimos 30 días para la gráfica
-    start_date = now - timedelta(days=29)
-    start_date_clean = datetime(start_date.year, start_date.month, start_date.day)
-    recent_orders = db.query(models.Order).filter(models.Order.created_at >= start_date_clean).all()
-    
-    daily_sales = {}
-    for i in range(30):
-        day = start_date_clean + timedelta(days=i)
-        day_str = day.strftime("%Y-%m-%d")
-        daily_sales[day_str] = {"total": 0.0, "count": 0}
+    if month:
+        parts = month.split('-')
+        if len(parts) == 2:
+            try:
+                target_year = int(parts[0])
+                target_month = int(parts[1])
+                start_date = datetime(target_year, target_month, 1)
+                if target_month == 12:
+                    end_date = datetime(target_year + 1, 1, 1)
+                else:
+                    end_date = datetime(target_year, target_month + 1, 1)
+                is_custom_month = True
+            except ValueError:
+                pass
+                
+    if is_custom_month:
+        # Ventas y órdenes del mes seleccionado
+        monthly_orders_list = db.query(models.Order).filter(
+            models.Order.created_at >= start_date,
+            models.Order.created_at < end_date
+        ).all()
+        monthly_sales = sum(o.total_price for o in monthly_orders_list)
+        monthly_orders_count = len(monthly_orders_list)
         
-    for order in recent_orders:
-        order_day = order.created_at.strftime("%Y-%m-%d")
-        if order_day in daily_sales:
-            daily_sales[order_day]["total"] += order.total_price
-            daily_sales[order_day]["count"] += 1
+        # Historial de ventas para todos los días del mes seleccionado
+        num_days = (end_date - start_date).days
+        daily_sales = {}
+        for i in range(num_days):
+            day = start_date + timedelta(days=i)
+            day_str = day.strftime("%Y-%m-%d")
+            daily_sales[day_str] = {"total": 0.0, "count": 0}
             
+        for order in monthly_orders_list:
+            order_day = order.created_at.strftime("%Y-%m-%d")
+            if order_day in daily_sales:
+                daily_sales[order_day]["total"] += order.total_price
+                daily_sales[order_day]["count"] += 1
+                
+        # Filtro de productos más vendidos limitado al mes seleccionado
+        period_orders_for_top = monthly_orders_list
+    else:
+        # Por defecto: mes actual y últimos 30 días
+        start_of_month = datetime(now.year, now.month, 1)
+        monthly_orders_list = db.query(models.Order).filter(models.Order.created_at >= start_of_month).all()
+        monthly_sales = sum(o.total_price for o in monthly_orders_list)
+        monthly_orders_count = len(monthly_orders_list)
+        
+        # Historial de ventas de los últimos 30 días para la gráfica
+        start_date = now - timedelta(days=29)
+        start_date_clean = datetime(start_date.year, start_date.month, start_date.day)
+        recent_orders = db.query(models.Order).filter(models.Order.created_at >= start_date_clean).all()
+        
+        daily_sales = {}
+        for i in range(30):
+            day = start_date_clean + timedelta(days=i)
+            day_str = day.strftime("%Y-%m-%d")
+            daily_sales[day_str] = {"total": 0.0, "count": 0}
+            
+        for order in recent_orders:
+            order_day = order.created_at.strftime("%Y-%m-%d")
+            if order_day in daily_sales:
+                daily_sales[order_day]["total"] += order.total_price
+                daily_sales[order_day]["count"] += 1
+                
+        # Por defecto usa todas las órdenes históricas para el Top 5
+        period_orders_for_top = db.query(models.Order).all()
+        
     sales_history = [{"date": k, "total": v["total"], "count": v["count"]} for k, v in sorted(daily_sales.items())]
     
-    # Top 5 productos más vendidos (leyendo de items_json)
-    all_orders = db.query(models.Order).all()
+    # Top 5 productos más vendidos leyendo de items_json
     product_totals = {}
-    for order in all_orders:
+    for order in period_orders_for_top:
         try:
             items = json.loads(order.items_json)
             for item in items:
