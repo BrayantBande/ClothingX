@@ -470,20 +470,24 @@ function renderSingleShirt(shirt) {
                 
                 <div class="product-actions">
                     <p id="stock-indicator-${shirt.id}" style="color: var(--accent-color); font-weight: bold; margin-bottom: 10px; font-size: 0.9rem;">${stockMsg}</p>
-                    <div class="actions-row" style="grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-                        <select class="size-selector-large" id="size-${shirt.id}" onchange="updateStockIndicator(${shirt.id}, this)">
-                            <option value="" disabled selected>Talla</option>
-                            ${sizeOptions}
-                        </select>
-                        <select class="size-selector-large" id="color-${shirt.id}">
-                            <option value="" disabled selected>Color</option>
-                            ${colorOptions}
-                        </select>
-                        <input type="number" id="qty-${shirt.id}" class="qty-selector" value="1" min="1" title="Cantidad" ${disableBtn}>
+                    <div class="product-selection-grid">
+                        <div class="selectors-row">
+                            <select class="size-selector-large" id="size-${shirt.id}" onchange="updateStockIndicator(${shirt.id}, this)">
+                                <option value="" disabled selected>Talla</option>
+                                ${sizeOptions}
+                            </select>
+                            <select class="size-selector-large" id="color-${shirt.id}">
+                                <option value="" disabled selected>Color</option>
+                                ${colorOptions}
+                            </select>
+                        </div>
+                        <div class="cart-row">
+                            <input type="number" id="qty-${shirt.id}" class="qty-selector" value="1" min="1" title="Cantidad" ${disableBtn}>
+                            <button class="btn-primary btn-add-to-cart" onclick="addToCart(${shirt.id}, this)" ${disableBtn}>
+                                ${availableSizes.length > 0 ? 'AÑADIR AL CARRITO' : 'AGOTADO'}
+                            </button>
+                        </div>
                     </div>
-                    <button class="btn-primary" style="width: 100%; margin-top: 15px;" onclick="addToCart(${shirt.id}, this)" ${disableBtn}>
-                        ${availableSizes.length > 0 ? 'AÑADIR AL CARRITO' : 'AGOTADO'}
-                    </button>
                     <!-- METODOS DE PAGO -->
                     <div style="margin-top: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
                         <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px;">🔒 Métodos de Pago Disponibles</p>
