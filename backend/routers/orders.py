@@ -31,6 +31,41 @@ def get_admin_stats(month: str = None, db: Session = Depends(get_db), current_ad
         
     # --- FILTRO POR PERIODO (MES O ÚLTIMOS 30 DÍAS) ---
     now = datetime.now()
+    
+    # Historial de ventas mensual (últimos 6 meses)
+    monthly_sales_history = []
+    temp_date = datetime(now.year, now.month, 1)
+    for _ in range(6):
+        m_start = temp_date
+        if temp_date.month == 12:
+            m_end = datetime(temp_date.year + 1, 1, 1)
+        else:
+            m_end = datetime(temp_date.year, temp_date.month + 1, 1)
+            
+        m_orders = db.query(models.Order).filter(
+            models.Order.created_at >= m_start,
+            models.Order.created_at < m_end
+        ).all()
+        m_sales = sum(o.total_price for o in m_orders)
+        
+        month_names_es = {
+            1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun",
+            7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"
+        }
+        
+        monthly_sales_history.append({
+            "month_name": f"{month_names_es[m_start.month]} {m_start.year}",
+            "month_val": f"{m_start.year}-{m_start.month:02d}",
+            "total": m_sales
+        })
+        
+        if temp_date.month == 1:
+            temp_date = datetime(temp_date.year - 1, 12, 1)
+        else:
+            temp_date = datetime(temp_date.year, temp_date.month - 1, 1)
+            
+    monthly_sales_history.reverse()
+    
     is_custom_month = False
     
     if month:
@@ -150,6 +185,7 @@ def get_admin_stats(month: str = None, db: Session = Depends(get_db), current_ad
         "monthly_sales": monthly_sales,
         "monthly_orders_count": monthly_orders_count,
         "sales_history": sales_history,
+        "monthly_sales_history": monthly_sales_history,
         "top_products": top_products,
         "critical_stock": critical_stock
     }

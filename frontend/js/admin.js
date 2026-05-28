@@ -355,12 +355,7 @@ async function loadDashboard() {
         // Actualizar título del gráfico
         const salesChartTitle = document.getElementById('sales-chart-title');
         if (salesChartTitle) {
-            if (selectedVal === 'last30') {
-                salesChartTitle.innerText = "📈 Ventas (Últimos 30 días)";
-            } else {
-                const selectedText = monthFilter.options[monthFilter.selectedIndex].text;
-                salesChartTitle.innerText = `📈 Ventas (${selectedText})`;
-            }
+            salesChartTitle.innerText = "📈 Ventas (Últimos 6 Meses)";
         }
         
         // Renderizar Categorías y Marcas
@@ -385,7 +380,7 @@ async function loadDashboard() {
         }
         
         // Renderizar Gráficas
-        renderCharts(stats.sales_history, stats.top_products);
+        renderCharts(stats.monthly_sales_history || [], stats.top_products);
         
         // Renderizar Stock Crítico
         renderCriticalStock(stats.critical_stock);
@@ -396,7 +391,7 @@ async function loadDashboard() {
     } catch (err) { console.error(err); }
 }
 
-function renderCharts(salesHistory, topProducts) {
+function renderCharts(monthlySalesHistory, topProducts) {
     // 1. GRÁFICO DE VENTAS (Línea)
     const salesCtx = document.getElementById('salesChart');
     if (salesCtx) {
@@ -404,12 +399,8 @@ function renderCharts(salesHistory, topProducts) {
             adminState.salesChart.destroy();
         }
 
-        const labels = salesHistory.map(item => {
-            const parts = item.date.split('-');
-            if (parts.length === 3) return `${parts[2]}/${parts[1]}`;
-            return item.date;
-        });
-        const data = salesHistory.map(item => item.total);
+        const labels = monthlySalesHistory.map(item => item.month_name);
+        const data = monthlySalesHistory.map(item => item.total);
 
         const ctx = salesCtx.getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 0, 200);
@@ -427,9 +418,9 @@ function renderCharts(salesHistory, topProducts) {
                     borderWidth: 3,
                     pointBackgroundColor: '#0066ff',
                     pointBorderColor: '#fff',
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointHitRadius: 10,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointHitRadius: 12,
                     fill: true,
                     backgroundColor: gradient,
                     tension: 0.4
