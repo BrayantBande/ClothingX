@@ -54,6 +54,7 @@
             border-radius: var(--border-radius);
             margin-bottom: 2rem;
             border: 1px solid rgba(255,255,255,0.05);
+            min-width: 0;
         }
         .admin-table-wrapper { 
             overflow-x: auto; 
@@ -245,6 +246,11 @@
             .mobile-stack > * {
                 width: 100% !important;
                 max-width: 100% !important;
+                min-width: 0 !important;
+            }
+
+            .dashboard-charts-grid {
+                grid-template-columns: 1fr !important;
             }
 
             #tab-categories > div {
@@ -389,7 +395,7 @@
                     <div class="admin-section" style="margin-bottom: 0;">
                         <h2 style="display: flex; align-items: center; gap: 10px; font-size: 1.2rem;">⚠️ Alertas de Stock Crítico</h2>
                         <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.2rem;">Camisas con tallas que tienen 3 o menos unidades.</p>
-                        <div class="admin-table-wrapper" style="max-height: 300px; overflow-y: auto;">
+                        <div class="admin-table-wrapper" style="max-height: 300px; overflow: auto;">
                             <table>
                                 <thead>
                                     <tr>
