@@ -1078,8 +1078,15 @@ function renderAdminOrders(orders) {
         if(order.status === "Completado") badgeColor = "#00c853";
         if(order.status === "Cancelado") badgeColor = "#0066ff";
         
-        const items = JSON.parse(order.items_json);
-        const itemsDesc = items.map(i => `${i.quantity}x ${i.name} (Talla: ${i.size} | Color: ${i.color})`).join('<br>');
+        let items = [];
+        try {
+            items = typeof order.items_json === 'string' ? JSON.parse(order.items_json) : (order.items_json || []);
+        } catch (e) {
+            console.error("Error parsing items_json for order ID", order.id, e);
+        }
+        const itemsDesc = Array.isArray(items) 
+            ? items.map(i => `${i.quantity}x ${i.name || 'Producto'} (Talla: ${i.size || 'N/A'} | Color: ${i.color || 'N/A'})`).join('<br>')
+            : 'Error al cargar artículos';
         
         const date = new Date(order.created_at).toLocaleString();
 
