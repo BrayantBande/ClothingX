@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from datetime import datetime
 
 class CategoryBase(BaseModel):
@@ -66,7 +66,30 @@ class OrderBase(BaseModel):
     total_price: float
 
 class OrderCreate(OrderBase):
-    pass
+    @field_validator('customer_name')
+    @classmethod
+    def validate_customer_name(cls, v):
+        v = v.strip()
+        name_part = v.split('(')[0].strip()
+        if len(name_part) < 3:
+            raise ValueError("El nombre del cliente debe tener al menos 3 caracteres")
+        if len(name_part) > 45:
+            raise ValueError("El nombre del cliente no debe superar los 45 caracteres")
+        words = name_part.split()
+        if len(words) > 4:
+            raise ValueError("El nombre solo debe contener nombres y apellidos (máximo 4 palabras)")
+        return v
+
+    @field_validator('customer_phone')
+    @classmethod
+    def validate_customer_phone(cls, v):
+        v = v.strip()
+        digits = "".join(filter(str.isdigit, v))
+        if len(digits) < 10 or len(digits) > 15:
+            raise ValueError("El teléfono debe contener entre 10 y 15 dígitos")
+        if len(set(digits)) == 1:
+            raise ValueError("Por favor ingresa un número de teléfono válido")
+        return v
 
 class OrderResponse(OrderBase):
     id: int

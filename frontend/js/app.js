@@ -699,8 +699,8 @@ function setupCartUI() {
                 
                 <div id="checkout-form" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
                     <h3 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--text-secondary);">Datos de Envío</h3>
-                    <input type="text" id="checkout-name" placeholder="Tu Nombre Completo" required style="width:100%; margin-bottom:10px; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; font-family: var(--font-family);">
-                    <input type="tel" id="checkout-phone" placeholder="Tu Teléfono (ej. +58...)" required style="width:100%; margin-bottom:10px; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; font-family: var(--font-family);">
+                    <input type="text" id="checkout-name" placeholder="Tu Nombre Completo" required maxlength="45" style="width:100%; margin-bottom:10px; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; font-family: var(--font-family);">
+                    <input type="tel" id="checkout-phone" placeholder="Tu Teléfono (ej. +58...)" required maxlength="20" style="width:100%; margin-bottom:10px; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; font-family: var(--font-family);">
                     <select id="checkout-payment-method" required style="width:100%; margin-bottom:15px; padding:10px; background:rgba(15,15,20,0.95); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; font-family: var(--font-family); font-size:0.9rem; outline:none; height:42px;">
                         <option value="" disabled selected>Selecciona tu Método de Pago...</option>
                         <option value="Pago Móvil">Pago Móvil</option>
@@ -874,13 +874,51 @@ window.submitOrder = async function() {
         return window.showToast("El nombre debe tener al menos 3 letras", "error");
     }
 
+    if(name.length > 45) {
+        return window.showToast("El nombre no debe tener más de 45 caracteres", "error");
+    }
+
+    const words = name.split(/\s+/).filter(w => w.length > 0);
+    if(words.length > 4) {
+        return window.showToast("Por favor ingresa solo tus nombres y apellidos (máx. 4 palabras)", "error");
+    }
+
     if(!payMethod) {
         return window.showToast("Por favor selecciona un método de pago", "error");
     }
 
-    const phoneRegex = /^[\+\d\s\-]{8,20}$/;
-    if(!phoneRegex.test(phone) || phone.replace(/\D/g, '').length < 8) {
-        return window.showToast("El teléfono no es válido (mínimo 8 números)", "error");
+    const digits = phone.replace(/\D/g, '');
+    
+    if (digits.length < 10 || digits.length > 15) {
+        return window.showToast("El número de teléfono debe tener entre 10 y 15 dígitos", "error");
+    }
+    
+    if (/^(\d)\1+$/.test(digits)) {
+        return window.showToast("Por favor ingresa un número de teléfono válido", "error");
+    }
+    
+    if (digits.startsWith('0') || digits.startsWith('58')) {
+        const isLocal = digits.startsWith('0');
+        const validPrefixes = ['0412', '0414', '0424', '0416', '0426', '0212', '412', '414', '424', '416', '426', '212'];
+        
+        const hasValidPrefix = validPrefixes.some(p => {
+            if (isLocal) {
+                return digits.startsWith(p);
+            } else {
+                return digits.startsWith('58' + p) || digits.startsWith('580' + p);
+            }
+        });
+        
+        if (!hasValidPrefix) {
+            return window.showToast("Prefijo de Venezuela no reconocido (usa 0412, 0414, 0424, 0416, 0426 o 0212)", "error");
+        }
+        
+        if (isLocal && digits.length !== 11) {
+            return window.showToast("Un número local de Venezuela debe tener exactamente 11 dígitos (ej: 04121234567)", "error");
+        }
+        if (!isLocal && (digits.length < 12 || digits.length > 13)) {
+            return window.showToast("Un número con código de país de Venezuela debe tener 12 o 13 dígitos (ej: 584121234567)", "error");
+        }
     }
 
     let total = 0;
