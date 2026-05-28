@@ -97,6 +97,29 @@ def compress_and_base64(file_content: bytes, filename: str, content_type: str) -
         encoded = base64.b64encode(file_content).decode("utf-8")
         return f"data:{content_type};base64,{encoded}"
 
+def optimize_image(file_content: bytes, filename: str) -> tuple[bytes, str, str]:
+    try:
+        img = Image.open(BytesIO(file_content))
+        
+        if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+            img = img.convert("RGBA")
+        else:
+            img = img.convert("RGB")
+            
+        img.thumbnail((1000, 1000), Image.Resampling.LANCZOS)
+        
+        output = BytesIO()
+        img.save(output, format="WEBP", quality=75)
+        optimized_bytes = output.getvalue()
+        
+        base_name = os.path.splitext(filename)[0]
+        new_filename = f"{base_name}.webp"
+        
+        return optimized_bytes, new_filename, "image/webp"
+    except Exception as e:
+        print(f"Error optimizando imagen: {e}")
+        return file_content, filename, "image/jpeg"
+
 # --- ENDPOINT DE CARGA DE IMÁGENES ---
 
 @router.post("/upload")
@@ -117,16 +140,19 @@ async def upload_images(request: Request, files: List[UploadFile] = File(...), c
                 
             file_content = await file.read()
             
+            # Optimizar y comprimir imagen a WebP antes de subir o guardar
+            optimized_content, new_filename, content_type = optimize_image(file_content, file.filename)
+            
             # Intentar primero subir a Supabase
-            public_url = upload_to_supabase(file_content, file.filename, file.content_type)
+            public_url = upload_to_supabase(optimized_content, new_filename, content_type)
             if public_url:
                 urls.append(public_url)
-                print(f"DEBUG: Archivo {file.filename} subido exitosamente a Supabase Storage: {public_url}")
+                print(f"DEBUG: Archivo {new_filename} subido exitosamente a Supabase Storage: {public_url}")
             else:
                 # Fallback a base64
-                base64_url = compress_and_base64(file_content, file.filename, file.content_type)
+                base64_url = compress_and_base64(optimized_content, new_filename, content_type)
                 urls.append(base64_url)
-                print(f"DEBUG: Fallback a Base64 para archivo {file.filename}")
+                print(f"DEBUG: Fallback a Base64 para archivo {new_filename}")
                 
         return {"urls": urls}
     except HTTPException:
