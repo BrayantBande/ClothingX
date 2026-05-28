@@ -989,6 +989,7 @@ header {
 @media (max-width: 992px) {
   .logo { font-size: 1.2rem; }
   .desktop-nav { display: none; }
+  .global-search { display: none !important; }
   .hamburger-btn { display: block; }
   
   .page-layout {
