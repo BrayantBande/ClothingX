@@ -151,8 +151,7 @@ def get_admin_stats(month: str = None, db: Session = Depends(get_db), current_ad
                 
         # Por defecto usa todas las órdenes históricas para el Top 5
         period_orders_for_top = db.query(models.Order).all()
-        
-    sales_history = [{"date": k, "total": v["total"], "count": v["count"]} for k, v in sorted(daily_sales.items())]
+        sales_history = [{"date": k, "total": v["total"], "count": v["count"]} for k, v in sorted(daily_sales.items())]
     
     # Top 5 productos más vendidos leyendo de items_json
     product_totals = {}
