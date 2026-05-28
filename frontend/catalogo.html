@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Catálogo Completo | SHIRT X</title>
+    <meta name="description" content="Explora nuestro catálogo completo de camisas streetwear y urbanas.">
+    <meta name="theme-color" content="#0a0a0c">
+    <link rel="icon" type="image/png" href="https://via.placeholder.com/64x64.png?text=SX">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="./css/index.css">
+</head>
+<body>
+    <!-- PRELOADER -->
+    <div class="preloader" id="preloader">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- HEADER -->
+    <header id="main-header" style="background: rgba(10, 10, 12, 0.95); border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <div class="logo"><a href="index.html">SHIRT<span>X</span></a></div>
+        <div style="display: flex; align-items: center; gap: 2rem;">
+            <nav class="desktop-nav">
+                <ul class="nav-links">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="catalogo.html" style="color: var(--text-primary);">Catálogo</a></li>
+                </ul>
+            </nav>
+            <div class="header-tools">
+                <div class="global-search" style="display:flex; align-items:center; background:rgba(255,255,255,0.03); border-radius:20px; padding:4px 12px; border:1px solid rgba(255,255,255,0.05); margin-right: 15px;">
+                    <input type="text" id="global-search-input" placeholder="Buscar..." style="background:transparent; border:none; color:white; width:100px; outline:none; font-family:var(--font-family); font-size:0.9rem;" onkeypress="if(event.key==='Enter') executeGlobalSearch()">
+                    <button onclick="executeGlobalSearch()" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:0; display:flex; align-items:center;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="M21 21l-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </div>
+                <button class="cart-btn" id="open-cart" aria-label="Abrir carrito">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span class="cart-count">0</span>
+                </button>
+                <button class="hamburger-btn" id="hamburger-btn" aria-label="Menú">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- LAYOUT DEL CATÁLOGO -->
+    <main class="page-layout">
+        <aside class="sidebar-filters">
+            <h3>Filtrar Búsqueda</h3>
+            
+            <div class="search-box">
+                <input type="text" id="search-input" class="search-input" placeholder="Buscar camisa...">
+            </div>
+
+            <div class="filter-group" id="dynamic-filters-container">
+                <p style="color: var(--text-secondary); font-size: 0.8rem;">Cargando filtros...</p>
+            </div>
+        </aside>
+
+        <section class="catalog-full">
+            <div class="catalog-header" style="margin-bottom: 2rem;">
+                <h2>Colección Completa</h2>
+            </div>
+            
+            <div class="shoes-grid" id="catalog-page-container">
+                <p style="color: var(--text-secondary); text-align: center; grid-column: 1 / -1;">Cargando catálogo completo...</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="./js/config.js"></script>
+    <script src="./js/app.js?v=1.0.0" type="module"></script>
+</body>
+</html>

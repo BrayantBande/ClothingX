@@ -1,0 +1,22 @@
+# Entornos virtuales
+backend/venv/
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Base de datos local SQLite
+backend/shirts.db
+*.db
+*.db-journal
+*.sqlite3
+
+# Archivos de subida locales
+backend/uploads/
+
+# Configuraciones del sistema y editores
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

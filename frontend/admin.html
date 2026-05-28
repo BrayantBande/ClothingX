@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SHIRT X | Panel Admin</title>
+    <meta name="theme-color" content="#0a0a0c">
+    <link rel="icon" type="image/png" href="https://via.placeholder.com/64x64.png?text=SX">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./css/index.css">
+    <style>
+        .admin-container {
+            padding: 100px 4% 40px;
+            width: 100%;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        .stat-card {
+            background: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255,255,255,0.05);
+            text-align: center;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-card h3 { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card .value { font-size: 3rem; font-family: var(--font-heading); color: var(--accent-color); margin: auto 0; }
+
+        .stat-list-scroll {
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .stat-list-scroll::-webkit-scrollbar { width: 4px; }
+        .stat-list-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+        .stat-list-scroll::-webkit-scrollbar-thumb { background: var(--accent-color); border-radius: 10px; }
+
+        .admin-section {
+            background: var(--surface-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .admin-table-wrapper { 
+            overflow-x: auto; 
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+        table { width: 100%; min-width: 700px; border-collapse: collapse; margin-top: 0; }
+        th, td { text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; white-space: nowrap; }
+        #inventory-table-body td:nth-child(2) { white-space: normal; min-width: 250px; line-height: 1.4; }
+        th { 
+            color: var(--text-secondary); 
+            text-transform: uppercase; 
+            font-size: 0.8rem; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            position: sticky;
+            top: 0;
+            background: var(--surface-color);
+            z-index: 10;
+        }
+        .img-preview-mini { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 4000;
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .modal-content {
+            background: #121215;
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 2.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .full-width { grid-column: 1 / -1; }
+        label { display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); }
+        input, select, textarea {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color var(--transition-fast);
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent-color);
+        }
+        select option {
+            background: #1a1a1f;
+            color: white;
+        }
+        .btn-action { padding: 0.5rem 1rem; font-size: 0.8rem; border-radius: 4px; font-weight: bold; white-space: nowrap; }
+        .btn-edit { background: #3344ff; color: white; }
+        .btn-delete { background: var(--accent-color); color: white; margin-left: 5px; }
+
+        .file-upload-wrapper {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        .file-upload-label {
+            white-space: nowrap;
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: all var(--transition-fast);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .file-upload-label:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+        .file-upload-label input[type="file"] {
+            display: none;
+        }
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            pointer-events: auto;
+            min-width: 280px;
+            background: #121215;
+            border-left: 4px solid var(--accent-color);
+            color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            transform: translateX(120%);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast.show { transform: translateX(0); }
+        .toast-error { border-left-color: #0066ff; }
+        
+        #confirm-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 11000;
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+        }
+        .confirm-content {
+            background: #121215;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            animation: modalIn 0.3s ease-out;
+        }
+        @keyframes modalIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .confirm-btns { display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; }
+
+        .mobile-only-link { display: none; }
+        
+        @media (max-width: 768px) {
+            .mobile-only-link { display: block; }
+            .admin-container { 
+                flex-direction: column !important;
+                margin-top: 80px !important;
+                padding: 15px 10px; 
+            }
+            .admin-sidebar {
+                width: 100% !important;
+                margin-bottom: 20px;
+            }
+            
+            .admin-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+                text-align: center;
+                margin-bottom: 2rem;
+            }
+            #connection-status { align-self: center; }
+            .admin-header .btn-primary { width: 100%; order: 3; }
+            
+            .stats-grid { grid-template-columns: 1fr; gap: 10px; }
+            
+            .admin-section-header {
+                flex-direction: column;
+                align-items: stretch !important;
+                gap: 10px;
+            }
+            #admin-search { max-width: 100% !important; width: 100%; }
+            
+            .admin-section-header > div {
+                flex-direction: column;
+                width: 100%;
+            }
+            .admin-section-header > div > * {
+                max-width: 100% !important;
+                width: 100%;
+            }
+            
+            .mobile-stack {
+                flex-direction: column;
+                grid-template-columns: 1fr !important;
+            }
+            .mobile-stack > * {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            #tab-categories > div {
+                grid-template-columns: 1fr !important;
+                gap: 1.5rem !important;
+            }
+
+            .form-grid { grid-template-columns: 1fr; }
+
+            .modal-content {
+                padding: 1.5rem;
+                margin: 0;
+                width: 100%;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+
+            .admin-table-wrapper {
+                margin: 0 -10px;
+                padding: 0 10px;
+                border-radius: 0;
+            }
+
+            .btn-action {
+                width: 100%;
+                margin: 4px 0 !important;
+                display: block;
+                text-align: center;
+            }
+
+            .modal-actions {
+                flex-direction: column !important;
+                gap: 0.8rem !important;
+            }
+            .modal-actions button {
+                width: 100% !important;
+                flex: none !important;
+            }
+        }
+
+        @media (min-width: 769px) {
+            table { min-width: 100%; }
+            th, td { white-space: normal; }
+            th { white-space: nowrap; }
+            td:last-child { white-space: nowrap; }
+            td:first-child { white-space: nowrap; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    
+    <div id="confirm-modal">
+        <div class="confirm-content">
+            <h3 id="confirm-title" style="margin-bottom: 1rem;">¿Estás seguro?</h3>
+            <p id="confirm-msg" style="color: var(--text-secondary); font-size: 0.9rem;"></p>
+            <div class="confirm-btns">
+                <button class="btn-primary" id="confirm-yes" style="background: var(--accent-color);">Sí, Eliminar</button>
+                <button class="btn-action" id="confirm-no" style="background: #333; color: white;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <header id="main-header">
+        <div class="logo"><a href="index.html">SHIRT<span>X</span></a></div>
+        <nav class="desktop-nav">
+            <ul class="nav-links" style="display: flex; align-items: center; gap: 20px;">
+                <li><a href="index.html">Ver Tienda</a></li>
+                <li><button onclick="logoutAdmin()" class="btn-action" style="background: var(--accent-color); color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px;">Cerrar Sesión</button></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="admin-container" style="display: flex; gap: 30px; align-items: flex-start; margin-top: 30px;">
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar" style="width: 250px; flex-shrink: 0; background: var(--surface-color); border-radius: 8px; padding: 20px; border: 1px solid rgba(255,255,255,0.05);">
+            <div id="connection-status" style="font-size: 0.8rem; padding: 5px 10px; border-radius: 20px; background: #0066ff; color: white; text-align: center; margin-bottom: 20px;">Servidor: Desconectado</div>
+            
+            <ul class="admin-menu" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px;">
+                <li><button class="tab-btn active" onclick="switchTab('tab-dashboard', this)" style="width: 100%; text-align: left; padding: 12px 15px; background: rgba(255,255,255,0.05); border: none; color: white; cursor: pointer; border-radius: 4px; font-weight: 600;">📊 Resumen</button></li>
+                <li><button class="tab-btn" onclick="switchTab('tab-inventory', this)" style="width: 100%; text-align: left; padding: 12px 15px; background: none; border: none; color: white; cursor: pointer; border-radius: 4px; font-weight: 600;">👕 Camisas</button></li>
+                <li><button class="tab-btn" onclick="switchTab('tab-categories', this)" style="width: 100%; text-align: left; padding: 12px 15px; background: none; border: none; color: white; cursor: pointer; border-radius: 4px; font-weight: 600;">📁 Categorías</button></li>
+                <li><button class="tab-btn" onclick="switchTab('tab-banners', this)" style="width: 100%; text-align: left; padding: 12px 15px; background: none; border: none; color: white; cursor: pointer; border-radius: 4px; font-weight: 600;">🖼️ Banners</button></li>
+                <li><button class="tab-btn" onclick="switchTab('tab-orders', this)" style="width: 100%; text-align: left; padding: 12px 15px; background: none; border: none; color: white; cursor: pointer; border-radius: 4px; font-weight: 600;">📦 Pedidos</button></li>
+                <li><button class="tab-btn" onclick="switchTab('tab-settings', this)" style="width: 100%; text-align: left; padding: 12px 15px; background: none; border: none; color: white; cursor: pointer; border-radius: 4px; font-weight: 600;">⚙️ Ajustes</button></li>
+                
+                <li class="mobile-only-link" style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                    <a href="index.html" style="display: block; width: 100%; text-align: left; padding: 12px 15px; background: rgba(255,255,255,0.05); color: white; text-decoration: none; border-radius: 4px; font-weight: 600; box-sizing: border-box;">🏠 Ir a la Tienda</a>
+                </li>
+                <li class="mobile-only-link">
+                    <button onclick="logoutAdmin()" style="width: 100%; text-align: left; padding: 12px 15px; background: var(--accent-color); border: none; color: white; cursor: pointer; border-radius: 4px; font-weight: 600; box-sizing: border-box;">🚪 Cerrar Sesión</button>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- CONTENT AREA -->
+        <div class="admin-content-area" style="flex-grow: 1; width: 100%; min-width: 0;">
+            
+            <!-- TAB: DASHBOARD -->
+            <div id="tab-dashboard" class="tab-content" style="display: block;">
+                <h1 style="margin-bottom: 20px;">Panel Administrativo</h1>
+                <div class="stats-grid" id="admin-stats">
+                    <div class="stat-card">
+                        <h3>Total Camisas</h3>
+                        <div class="value" id="stat-total-shoes">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Por Categoría</h3>
+                        <div id="stat-list-categories" class="stat-list-scroll" style="text-align: left; font-size: 0.9rem; margin-top: 10px;"></div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Por Marca</h3>
+                        <div id="stat-list-brands" class="stat-list-scroll" style="text-align: left; font-size: 0.9rem; margin-top: 10px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: INVENTORY -->
+            <div id="tab-inventory" class="tab-content" style="display: none;">
+                <div class="admin-section">
+                    <div class="admin-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h2>Inventario de Camisas</h2>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="admin-search" placeholder="Buscar camisa..." style="max-width: 250px; height: 42px;">
+                            <select id="admin-brand-filter" style="max-width: 180px; height: 42px; padding: 0 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; outline: none;">
+                                <option value="all">Todas las Marcas</option>
+                            </select>
+                            <button class="btn-primary" onclick="openModal()" style="height: 42px; padding: 0 1.5rem; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; white-space: nowrap;">+ Nueva Camisa</button>
+                        </div>
+                    </div>
+                    <div class="admin-table-wrapper">
+                        <table>
+                            <thead>
+                                <tr><th>Imagen</th><th>Nombre</th><th>Marca</th><th>Categoría</th><th>Precio</th><th>Acciones</th></tr>
+                            </thead>
+                            <tbody id="inventory-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: CATEGORIES -->
+            <div id="tab-categories" class="tab-content" style="display: none;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div class="admin-section">
+                        <h2>Categorías</h2>
+                        <div style="display: flex; gap: 10px; margin: 1.5rem 0;" class="mobile-stack">
+                            <input type="text" id="new-cat-name" placeholder="Nueva categoría">
+                            <button class="btn-primary" id="btn-add-category">Añadir</button>
+                        </div>
+                        <div id="categories-list" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+                    </div>
+                    <div class="admin-section">
+                        <h2>Marcas</h2>
+                        <div style="display: flex; gap: 10px; margin: 1.5rem 0;" class="mobile-stack">
+                            <input type="text" id="new-brand-name" placeholder="Nueva marca">
+                            <button class="btn-primary" id="btn-add-brand">Añadir</button>
+                        </div>
+                        <div id="brands-list" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: BANNERS -->
+            <div id="tab-banners" class="tab-content" style="display: none;">
+                <div class="admin-section">
+                    <h2>Banners de Portada</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">Sube imágenes promocionales para el Carrusel Principal.</p>
+                    <div style="display: flex; gap: 10px; margin-bottom: 1.5rem; align-items: flex-end; flex-wrap: wrap;">
+                        <div style="flex-grow: 1; min-width: 250px;">
+                            <label>Título del Banner (Opcional)</label>
+                            <input type="text" id="new-banner-title" placeholder="ej. SHIRT X - Drop Invierno" style="height: 42px;">
+                        </div>
+                        <div>
+                            <label class="file-upload-label" style="background: #333; margin: 0; display: flex; align-items: center; height: 42px;">
+                                <span>📸 Seleccionar Archivo</span>
+                                <input type="file" id="new-banner-file" accept="image/*" onchange="updateFileName(this, 'banner-img-status')">
+                            </label>
+                        </div>
+                        <button class="btn-primary" id="btn-add-banner" style="height: 42px; padding: 0 1.5rem;">Subir y Activar</button>
+                    </div>
+                    <div id="banner-img-status" class="file-status" style="margin-top: -10px; margin-bottom: 20px; font-size: 0.8rem; color: var(--text-secondary);">Ningún archivo seleccionado</div>
+                    <div id="banners-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;"></div>
+                </div>
+            </div>
+
+            <!-- TAB: PEDIDOS -->
+            <div id="tab-orders" class="tab-content" style="display: none;">
+                <div class="admin-section">
+                    <div class="admin-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 15px;">
+                        <h2>Registro de Pedidos</h2>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; width: 100%; max-width: 600px; justify-content: flex-end;" class="mobile-stack">
+                            <input type="text" id="order-search" placeholder="Buscar por cliente o teléfono..." style="max-width: 250px; height: 42px;">
+                            <div style="display: flex; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 3px; height: 42px; align-items: center;">
+                                <button class="btn-filter active" onclick="filterOrders('ALL', this)" style="background: var(--accent-color); border: none; color: white; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border-radius: 3px; transition: all 0.2s;">Todos</button>
+                                <button class="btn-filter" onclick="filterOrders('PENDING', this)" style="background: none; border: none; color: white; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border-radius: 3px; transition: all 0.2s; margin-left: 2px;">Pendientes</button>
+                                <button class="btn-filter" onclick="filterOrders('COMPLETED', this)" style="background: none; border: none; color: white; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border-radius: 3px; transition: all 0.2s; margin-left: 2px;">Completados</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="admin-table-wrapper">
+                        <table>
+                            <thead>
+                                <tr><th>Cliente</th><th>Teléfono</th><th>Total</th><th>Estado</th><th>Acciones</th></tr>
+                            </thead>
+                            <tbody id="orders-table-body">
+                                <tr><td colspan="5" style="text-align: center;">Cargando pedidos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: SETTINGS -->
+            <div id="tab-settings" class="tab-content" style="display: none;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;" class="mobile-stack">
+                    <div class="admin-section" style="max-width: 500px;">
+                        <h2 style="margin-bottom: 20px;">Ajustes de la Tienda</h2>
+                        <form id="form-store-settings" style="display: flex; flex-direction: column; gap: 15px;">
+                            <div>
+                                <label>Nombre de la Tienda</label>
+                                <input type="text" id="setting-store-name" required placeholder="ej. SHIRT X">
+                            </div>
+                            <div>
+                                <label>Eslogan / Subtítulo</label>
+                                <input type="text" id="setting-store-slogan" required placeholder="ej. Streetwear & Urban Culture">
+                            </div>
+                            <div>
+                                <label>Número de WhatsApp (con código de país, sin +)</label>
+                                <input type="text" id="setting-whatsapp" required placeholder="ej. 584242370620">
+                            </div>
+                            
+                            <div style="margin-top: 10px;">
+                                <label>Logo de la Tienda</label>
+                                <div class="file-upload-wrapper">
+                                    <label for="setting-logo-file" class="file-upload-label" style="background: #333; margin: 0; display: flex; align-items: center; height: 42px;">
+                                        <span>📸 Subir Logo</span>
+                                        <input type="file" id="setting-logo-file" accept="image/*" onchange="updateFileName(this, 'setting-logo-status')">
+                                    </label>
+                                    <div id="setting-logo-status" class="file-status" style="font-size: 0.8rem; color: var(--text-secondary);">Ningún archivo seleccionado</div>
+                                </div>
+                                <div id="current-logo-preview" style="margin-top: 10px; max-width: 150px;"></div>
+                                <input type="hidden" id="setting-logo-url">
+                            </div>
+
+                            <button type="submit" class="btn-primary" style="margin-top: 10px;" id="btn-update-settings">Guardar Ajustes</button>
+                        </form>
+                    </div>
+
+                    <div class="admin-section" style="max-width: 500px;">
+                        <h2 style="margin-bottom: 20px;">Cambiar Contraseña</h2>
+                        <form id="form-change-password" style="display: flex; flex-direction: column; gap: 15px;">
+                            <div>
+                                <label>Contraseña Actual</label>
+                                <input type="password" id="current-password" required>
+                            </div>
+                            <div>
+                                <label>Nueva Contraseña</label>
+                                <input type="password" id="new-password" required minlength="6">
+                            </div>
+                            <button type="submit" class="btn-primary" style="margin-top: 10px;" id="btn-update-pwd">Actualizar Contraseña</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal Form -->
+    <div id="shoe-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title" style="margin-bottom: 2rem;">Nueva Camisa</h2>
+            <form id="shoe-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-grid">
+                    <div>
+                        <label>Nombre del Modelo</label>
+                        <input type="text" id="form-name" required placeholder="ej. Oversized Heavyweight Tee">
+                    </div>
+                    <div>
+                        <label>Marca</label>
+                        <select id="form-brand" required>
+                            <!-- Dinámico -->
+                        </select>
+                    </div>
+                    <div>
+                        <label>Categoría</label>
+                        <select id="form-category" required>
+                            <!-- Dinámico -->
+                        </select>
+                    </div>
+                    <div>
+                        <label>Precio ($)</label>
+                        <input type="number" id="form-price" step="0.01" required placeholder="45.00">
+                    </div>
+                    
+                    <div>
+                        <label>Colores Disponibles (separados por comas)</label>
+                        <input type="text" id="form-colors" required placeholder="ej. Negro, Blanco, Gris">
+                    </div>
+
+                    <div class="full-width">
+                        <label>Descripción</label>
+                        <textarea id="form-description" rows="3" placeholder="Detalles de composición y corte..."></textarea>
+                    </div>
+                    <div class="full-width">
+                        <label>Inventario (Tallas y Cantidades)</label>
+                        <div id="size-inventory-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+                            <!-- Las filas se añadirán dinámicamente desde admin.js -->
+                        </div>
+                        <button type="button" class="btn-primary" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="addSizeRow('', 1)">+ Añadir Talla</button>
+                        <input type="hidden" id="form-sizes">
+                    </div>
+                    
+                    <div id="edit-previews" class="full-width" style="display:none; background:rgba(255,255,255,0.02); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px dashed rgba(255,255,255,0.1);"></div>
+
+                    <div class="full-width">
+                        <label>Foto Principal</label>
+                        <div class="file-upload-wrapper">
+                            <label for="form-image-file" class="file-upload-label">
+                                <span>📁 Seleccionar Foto Principal</span>
+                                <input type="file" id="form-image-file" accept="image/*" onchange="updateFileName(this, 'main-img-status')">
+                            </label>
+                            <div id="main-img-status" class="file-status">Ningún archivo seleccionado</div>
+                        </div>
+                        <input type="hidden" id="form-image-url">
+                    </div>
+                    <div class="full-width">
+                        <label>Fotos Adicionales (Galería)</label>
+                        <div class="file-upload-wrapper">
+                            <label for="form-extra-files" class="file-upload-label" style="background: #333;">
+                                <span>📸 Seleccionar Varias Fotos</span>
+                                <input type="file" id="form-extra-files" accept="image/*" multiple onchange="updateFileName(this, 'extra-img-status')">
+                            </label>
+                            <div id="extra-img-status" class="file-status">0 archivos seleccionados</div>
+                        </div>
+                        <input type="hidden" id="form-extra-urls">
+                    </div>
+                </div>
+                <div class="modal-actions" style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn-primary" style="flex: 2;">Guardar Producto</button>
+                    <button type="button" class="btn-primary" style="flex: 1; background: #333;" onclick="closeModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="./js/config.js"></script>
+    <script src="./js/admin.js"></script>
+</body>
+</html>

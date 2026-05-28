@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SHIRT X | Streetwear & Urban Culture</title>
+    <meta name="description" content="Catálogo digital de camisas streetwear y urbanas. Compra directa vía WhatsApp.">
+    <meta name="theme-color" content="#0a0a0c">
+    <link rel="icon" type="image/png" href="https://via.placeholder.com/64x64.png?text=SX">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="./css/index.css">
+</head>
+<body>
+    <!-- PRELOADER -->
+    <div class="preloader" id="preloader">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- HEADER -->
+    <header id="main-header">
+        <div class="logo"><a href="index.html">SHIRT<span>X</span></a></div>
+        <div style="display: flex; align-items: center; gap: 2rem;">
+            <nav class="desktop-nav">
+                <ul class="nav-links">
+                    <li><a href="index.html" style="color: var(--text-primary);">Inicio</a></li>
+                    <li><a href="catalogo.html">Catálogo</a></li>
+                </ul>
+            </nav>
+            <div class="header-tools">
+                <div class="global-search" style="display:flex; align-items:center; background:rgba(255,255,255,0.03); border-radius:20px; padding:4px 12px; border:1px solid rgba(255,255,255,0.05); margin-right: 15px;">
+                    <input type="text" id="global-search-input" placeholder="Buscar..." style="background:transparent; border:none; color:white; width:100px; outline:none; font-family:var(--font-family); font-size:0.9rem;" onkeypress="if(event.key==='Enter') executeGlobalSearch()">
+                    <button onclick="executeGlobalSearch()" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:0; display:flex; align-items:center;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="M21 21l-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </div>
+                <button class="cart-btn" id="open-cart" aria-label="Abrir carrito">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span class="cart-count">0</span>
+                </button>
+                <button class="hamburger-btn" id="hamburger-btn" aria-label="Menú">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <main>
+        <section class="hero" id="hero-banner-container">
+            <div class="banner-slide active" style="background-image: url('https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2000&auto=format&fit=crop');">
+                <div class="banner-overlay"></div>
+                <div class="banner-content-center">
+                    <h1>SHIRT X</h1>
+                    <p>Streetwear & Urban Culture</p>
+                    <a href="catalogo.html" class="btn-primary">EXPLORAR</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ÚLTIMOS MODELOS -->
+        <section class="catalog-section">
+            <div class="catalog-header">
+                <h2>Últimos Modelos</h2>
+                <a href="catalogo.html" style="color: var(--accent-color); text-transform: uppercase; font-size: 0.9rem; font-weight: bold; transition: opacity 0.2s;">Ver Todos &rarr;</a>
+            </div>
+            
+            <div class="shoes-grid" id="latest-shoes-container">
+                <p style="color: var(--text-secondary); text-align: center; grid-column: 1 / -1;">Cargando inventario desde el servidor...</p>
+            </div>
+        </section>
+
+        <!-- SECCIÓN DE CONFIANZA -->
+        <section style="padding: 4rem 2rem; background: rgba(255,255,255,0.01); margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.03);">
+            <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; text-align: center;">
+                <div class="reveal">
+                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">🚚</div>
+                    <h3 style="font-family: var(--font-heading); margin-bottom: 0.5rem; font-size: 1.2rem;">Envíos Asegurados</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">Llegamos a nivel nacional con envíos express y seguros.</p>
+                </div>
+                <div class="reveal">
+                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">🛡️</div>
+                    <h3 style="font-family: var(--font-heading); margin-bottom: 0.5rem; font-size: 1.2rem;">Corte Premium</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">Telas seleccionadas y acabados duraderos de calidad comercial.</p>
+                </div>
+                <div class="reveal">
+                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">💬</div>
+                    <h3 style="font-family: var(--font-heading); margin-bottom: 0.5rem; font-size: 1.2rem;">Soporte WhatsApp</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">Atención personalizada e inmediata de forma directa.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="./js/config.js"></script>
+    <script src="./js/app.js?v=1.0.0" type="module"></script>
+</body>
+</html>
