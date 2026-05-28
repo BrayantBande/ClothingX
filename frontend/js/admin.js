@@ -352,10 +352,20 @@ async function loadDashboard() {
         const criticalStockEl = document.getElementById('stat-critical-stock-count');
         if (criticalStockEl) criticalStockEl.innerText = `${stats.critical_stock.length} prod.`;
         
-        // Actualizar título del gráfico
+        // Actualizar título del gráfico y decidir datos de la gráfica
         const salesChartTitle = document.getElementById('sales-chart-title');
-        if (salesChartTitle) {
-            salesChartTitle.innerText = "📈 Ventas (Últimos 6 Meses)";
+        let chartData = [];
+        if (selectedVal === 'last30') {
+            if (salesChartTitle) {
+                salesChartTitle.innerText = "📈 Ventas (Últimos 6 Meses)";
+            }
+            chartData = stats.monthly_sales_history || [];
+        } else {
+            if (salesChartTitle) {
+                const selectedText = monthFilter.options[monthFilter.selectedIndex].text;
+                salesChartTitle.innerText = `📈 Ventas Semanales (${selectedText})`;
+            }
+            chartData = stats.sales_history || [];
         }
         
         // Renderizar Categorías y Marcas
@@ -380,7 +390,7 @@ async function loadDashboard() {
         }
         
         // Renderizar Gráficas
-        renderCharts(stats.monthly_sales_history || [], stats.top_products);
+        renderCharts(chartData, stats.top_products);
         
         // Renderizar Stock Crítico
         renderCriticalStock(stats.critical_stock);
@@ -391,7 +401,7 @@ async function loadDashboard() {
     } catch (err) { console.error(err); }
 }
 
-function renderCharts(monthlySalesHistory, topProducts) {
+function renderCharts(salesData, topProducts) {
     // 1. GRÁFICO DE VENTAS (Línea)
     const salesCtx = document.getElementById('salesChart');
     if (salesCtx) {
@@ -399,8 +409,8 @@ function renderCharts(monthlySalesHistory, topProducts) {
             adminState.salesChart.destroy();
         }
 
-        const labels = monthlySalesHistory.map(item => item.month_name);
-        const data = monthlySalesHistory.map(item => item.total);
+        const labels = salesData.map(item => item.month_name || item.date);
+        const data = salesData.map(item => item.total);
 
         const ctx = salesCtx.getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 0, 200);

@@ -92,20 +92,37 @@ def get_admin_stats(month: str = None, db: Session = Depends(get_db), current_ad
         monthly_sales = sum(o.total_price for o in monthly_orders_list)
         monthly_orders_count = len(monthly_orders_list)
         
-        # Historial de ventas para todos los días del mes seleccionado
+        # Historial de ventas semanal para el mes seleccionado
         num_days = (end_date - start_date).days
-        daily_sales = {}
-        for i in range(num_days):
-            day = start_date + timedelta(days=i)
-            day_str = day.strftime("%Y-%m-%d")
-            daily_sales[day_str] = {"total": 0.0, "count": 0}
+        weeks = [
+            {"label": "Semana 1 (1-7)", "total": 0.0, "count": 0},
+            {"label": "Semana 2 (8-14)", "total": 0.0, "count": 0},
+            {"label": "Semana 3 (15-21)", "total": 0.0, "count": 0},
+            {"label": "Semana 4 (22-28)", "total": 0.0, "count": 0}
+        ]
+        if num_days > 28:
+            weeks.append({"label": f"Semana 5 (29-{num_days})", "total": 0.0, "count": 0})
             
         for order in monthly_orders_list:
-            order_day = order.created_at.strftime("%Y-%m-%d")
-            if order_day in daily_sales:
-                daily_sales[order_day]["total"] += order.total_price
-                daily_sales[order_day]["count"] += 1
+            day = order.created_at.day
+            if 1 <= day <= 7:
+                weeks[0]["total"] += order.total_price
+                weeks[0]["count"] += 1
+            elif 8 <= day <= 14:
+                weeks[1]["total"] += order.total_price
+                weeks[1]["count"] += 1
+            elif 15 <= day <= 21:
+                weeks[2]["total"] += order.total_price
+                weeks[2]["count"] += 1
+            elif 22 <= day <= 28:
+                weeks[3]["total"] += order.total_price
+                weeks[3]["count"] += 1
+            elif day >= 29 and len(weeks) > 4:
+                weeks[4]["total"] += order.total_price
+                weeks[4]["count"] += 1
                 
+        sales_history = [{"date": w["label"], "total": w["total"], "count": w["count"]} for w in weeks]
+        
         # Filtro de productos más vendidos limitado al mes seleccionado
         period_orders_for_top = monthly_orders_list
     else:
