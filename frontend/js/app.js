@@ -878,9 +878,19 @@ window.submitOrder = async function() {
         return window.showToast("El nombre no debe tener más de 45 caracteres", "error");
     }
 
+    // Evitar caracteres idénticos repetidos (ej: aaaa)
+    if (/(.)\1{3,}/.test(name)) {
+        return window.showToast("El nombre contiene caracteres repetitivos no válidos", "error");
+    }
+
     const words = name.split(/\s+/).filter(w => w.length > 0);
-    if(words.length > 4) {
-        return window.showToast("Por favor ingresa solo tus nombres y apellidos (máx. 4 palabras)", "error");
+    if(words.length < 2 || words.length > 4) {
+        return window.showToast("Por favor ingresa tu nombre y apellido (entre 2 y 4 palabras)", "error");
+    }
+
+    // Evitar palabras extremadamente largas e incoherentes
+    if (words.some(w => w.length > 18)) {
+        return window.showToast("Cada palabra del nombre debe tener una longitud razonable (máx. 18 letras)", "error");
     }
 
     if(!payMethod) {
@@ -896,29 +906,35 @@ window.submitOrder = async function() {
     if (/^(\d)\1+$/.test(digits)) {
         return window.showToast("Por favor ingresa un número de teléfono válido", "error");
     }
+
+    // Validación estricta para números de Venezuela
+    let isValidVzla = false;
     
-    if (digits.startsWith('0') || digits.startsWith('58')) {
-        const isLocal = digits.startsWith('0');
-        const validPrefixes = ['0412', '0414', '0424', '0416', '0426', '0212', '412', '414', '424', '416', '426', '212'];
-        
-        const hasValidPrefix = validPrefixes.some(p => {
-            if (isLocal) {
-                return digits.startsWith(p);
-            } else {
-                return digits.startsWith('58' + p) || digits.startsWith('580' + p);
-            }
-        });
-        
-        if (!hasValidPrefix) {
-            return window.showToast("Prefijo de Venezuela no reconocido (usa 0412, 0414, 0424, 0416, 0426 o 0212)", "error");
+    if (digits.startsWith('58')) {
+        const after58 = digits.substring(2);
+        if (after58.startsWith('0')) {
+            const prefix = after58.substring(0, 4);
+            const valid = ['0412', '0414', '0424', '0416', '0426', '0212'].includes(prefix);
+            if (valid && after58.length === 11) isValidVzla = true;
+        } else {
+            const prefix = after58.substring(0, 3);
+            const valid = ['412', '414', '424', '416', '426', '212'].includes(prefix);
+            if (valid && after58.length === 10) isValidVzla = true;
         }
-        
-        if (isLocal && digits.length !== 11) {
-            return window.showToast("Un número local de Venezuela debe tener exactamente 11 dígitos (ej: 04121234567)", "error");
-        }
-        if (!isLocal && (digits.length < 12 || digits.length > 13)) {
-            return window.showToast("Un número con código de país de Venezuela debe tener 12 o 13 dígitos (ej: 584121234567)", "error");
-        }
+    }
+    else if (digits.startsWith('0')) {
+        const prefix = digits.substring(0, 4);
+        const valid = ['0412', '0414', '0424', '0416', '0426', '0212'].includes(prefix);
+        if (valid && digits.length === 11) isValidVzla = true;
+    }
+    else {
+        const prefix = digits.substring(0, 3);
+        const valid = ['412', '414', '424', '416', '426', '212'].includes(prefix);
+        if (valid && digits.length === 10) isValidVzla = true;
+    }
+
+    if (!isValidVzla) {
+        return window.showToast("Número de teléfono de Venezuela no válido. Debe comenzar por 0412, 0414, 0424, 0416, 0426 o 0212 (ej: 04121234567 o +584121234567)", "error");
     }
 
     let total = 0;
