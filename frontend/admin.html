@@ -198,7 +198,7 @@
 
         .mobile-only-link { display: none; }
         
-        @media (max-width: 768px) {
+        @media (max-width: 992px) {
             .mobile-only-link { display: block; }
             .admin-container { 
                 flex-direction: column !important;
@@ -285,7 +285,7 @@
             }
         }
 
-        @media (min-width: 769px) {
+        @media (min-width: 993px) {
             table { min-width: 100%; }
             th, td { white-space: normal; }
             th { white-space: nowrap; }
@@ -346,18 +346,77 @@
             <!-- TAB: DASHBOARD -->
             <div id="tab-dashboard" class="tab-content" style="display: block;">
                 <h1 style="margin-bottom: 20px;">Panel Administrativo</h1>
+                
+                <!-- KPI Cards Grid -->
                 <div class="stats-grid" id="admin-stats">
-                    <div class="stat-card">
+                    <div class="stat-card" style="min-height: auto; padding: 1.2rem; height: 130px; justify-content: center;">
                         <h3>Total Camisas</h3>
-                        <div class="value" id="stat-total-shoes">0</div>
+                        <div class="value" id="stat-total-shirts" style="font-size: 2.2rem; margin: 0.5rem 0 0;">0</div>
                     </div>
-                    <div class="stat-card">
-                        <h3>Por Categoría</h3>
-                        <div id="stat-list-categories" class="stat-list-scroll" style="text-align: left; font-size: 0.9rem; margin-top: 10px;"></div>
+                    <div class="stat-card" style="min-height: auto; padding: 1.2rem; height: 130px; justify-content: center;">
+                        <h3>Ventas del Mes</h3>
+                        <div class="value" id="stat-monthly-sales" style="font-size: 2.2rem; margin: 0.5rem 0 0; color: #00c853;">$0.00</div>
                     </div>
-                    <div class="stat-card">
-                        <h3>Por Marca</h3>
-                        <div id="stat-list-brands" class="stat-list-scroll" style="text-align: left; font-size: 0.9rem; margin-top: 10px;"></div>
+                    <div class="stat-card" style="min-height: auto; padding: 1.2rem; height: 130px; justify-content: center;">
+                        <h3>Pedidos del Mes</h3>
+                        <div class="value" id="stat-monthly-orders" style="font-size: 2.2rem; margin: 0.5rem 0 0; color: #ffb300;">0</div>
+                    </div>
+                    <div class="stat-card" style="min-height: auto; padding: 1.2rem; height: 130px; justify-content: center;">
+                        <h3>Stock Crítico</h3>
+                        <div class="value" id="stat-critical-stock-count" style="font-size: 2.2rem; margin: 0.5rem 0 0; color: var(--accent-color);">0</div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="dashboard-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="chart-container" style="background: var(--surface-color); padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid rgba(255,255,255,0.05); min-height: 350px; display: flex; flex-direction: column;">
+                        <h3 style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px;">📈 Ventas (Últimos 30 días)</h3>
+                        <div class="chart-wrapper" style="position: relative; flex-grow: 1; height: 260px; width: 100%;">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="background: var(--surface-color); padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid rgba(255,255,255,0.05); min-height: 350px; display: flex; flex-direction: column;">
+                        <h3 style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px;">🔥 Productos Más Vendidos</h3>
+                        <div class="chart-wrapper" style="position: relative; flex-grow: 1; height: 260px; width: 100%;">
+                            <canvas id="topProductsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts & Stats Lists -->
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;" class="mobile-stack">
+                    <!-- Left: Critical Stock Alerts -->
+                    <div class="admin-section" style="margin-bottom: 0;">
+                        <h2 style="display: flex; align-items: center; gap: 10px; font-size: 1.2rem;">⚠️ Alertas de Stock Crítico</h2>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.2rem;">Camisas con tallas que tienen 3 o menos unidades.</p>
+                        <div class="admin-table-wrapper" style="max-height: 300px; overflow-y: auto;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Imagen</th>
+                                        <th>Camisa</th>
+                                        <th>Marca</th>
+                                        <th>Talla (Stock)</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="critical-stock-table-body">
+                                    <tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">Cargando stock crítico...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Right: Quick breakdown by category and brand -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div class="admin-section" style="margin-bottom: 0; padding: 1.5rem;">
+                            <h3 style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px;">📁 Por Categoría</h3>
+                            <div id="stat-list-categories" class="stat-list-scroll" style="text-align: left; font-size: 0.9rem; max-height: 120px; overflow-y: auto;"></div>
+                        </div>
+                        <div class="admin-section" style="margin-bottom: 0; padding: 1.5rem;">
+                            <h3 style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px;">🏷️ Por Marca</h3>
+                            <div id="stat-list-brands" class="stat-list-scroll" style="text-align: left; font-size: 0.9rem; max-height: 120px; overflow-y: auto;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -593,6 +652,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="./js/config.js"></script>
     <script src="./js/admin.js"></script>
 </body>

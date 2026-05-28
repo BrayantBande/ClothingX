@@ -111,7 +111,8 @@ Render hospedará tu backend programado en Python (FastAPI).
    - **Build Command**: `pip install -r backend/requirements.txt`
    - **Start Command**: `python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
 5. En la pestaña **Environment** del servicio en Render, añade las siguientes variables de entorno:
-   - `DATABASE_URL`: Copia la cadena de conexión URI de Supabase (la encuentras en Supabase ➔ Settings ➔ Database ➔ Connection String ➔ URI). *Recuerda cambiar la contraseña temporal de la base de datos en la cadena de conexión*.
+   - `DATABASE_URL`: Copia la cadena de conexión URI del **Connection Pooler (puerto 6543)** de Supabase en lugar del puerto directo `5432` (la encuentras en Supabase ➔ Settings ➔ Database ➔ Connection String ➔ URI, asegurándote de seleccionar **Session** o **Transaction Mode** en la opción del Pooler). *Render no soporta IPv6 saliente en su plan gratuito, y usar el puerto directo causará errores de red.*
+   - `PYTHONPATH`: `backend` *(Esencial para evitar errores de importación de módulos si tu backend está en una subcarpeta).*
    - `SUPABASE_URL`: La URL del proyecto de Supabase.
    - `SUPABASE_KEY`: La clave secreta de API (`service_role`).
    - `SUPABASE_BUCKET`: `shirts`

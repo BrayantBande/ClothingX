@@ -4,7 +4,9 @@ const adminState = {
     shirts: [],
     categories: [],
     brands: [],
-    orders: []
+    orders: [],
+    salesChart: null,
+    topProductsChart: null
 };
 
 let orderSearchQuery = '';
@@ -290,28 +292,215 @@ async function loadDashboard() {
         if (!statsRes.ok) return;
         const stats = await statsRes.json();
         
-        document.getElementById('stat-total-shoes').innerText = stats.total_shirts; // Mapeando stat-total-shoes a total_shirts
+        // Actualizar Tarjetas KPI
+        const totalShirtsEl = document.getElementById('stat-total-shirts');
+        if (totalShirtsEl) totalShirtsEl.innerText = stats.total_shirts;
         
+        const monthlySalesEl = document.getElementById('stat-monthly-sales');
+        if (monthlySalesEl) monthlySalesEl.innerText = `$${stats.monthly_sales.toFixed(2)}`;
+        
+        const monthlyOrdersEl = document.getElementById('stat-monthly-orders');
+        if (monthlyOrdersEl) monthlyOrdersEl.innerText = stats.monthly_orders_count;
+        
+        const criticalStockEl = document.getElementById('stat-critical-stock-count');
+        if (criticalStockEl) criticalStockEl.innerText = `${stats.critical_stock.length} prod.`;
+        
+        // Renderizar Categorías y Marcas
         const catList = document.getElementById('stat-list-categories');
-        catList.innerHTML = stats.by_category.map(c => `
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding:3px 0;">
-                <span style="text-transform:capitalize;">${c.name}</span>
-                <span style="color:var(--accent-color); font-weight:bold;">${c.count}</span>
-            </div>
-        `).join('') || '<p style="color:var(--text-secondary)">No hay datos</p>';
+        if (catList) {
+            catList.innerHTML = stats.by_category.map(c => `
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding:4px 0; font-size: 0.85rem;">
+                    <span style="text-transform:capitalize;">${c.name}</span>
+                    <span style="color:var(--accent-color); font-weight:bold;">${c.count}</span>
+                </div>
+            `).join('') || '<p style="color:var(--text-secondary)">No hay datos</p>';
+        }
 
         const brandList = document.getElementById('stat-list-brands');
-        brandList.innerHTML = stats.by_brand.map(b => `
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding:3px 0;">
-                <span style="text-transform:capitalize;">${b.name}</span>
-                <span style="color:var(--accent-color); font-weight:bold;">${b.count}</span>
-            </div>
-        `).join('') || '<p style="color:var(--text-secondary)">No hay datos</p>';
+        if (brandList) {
+            brandList.innerHTML = stats.by_brand.map(b => `
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding:4px 0; font-size: 0.85rem;">
+                    <span style="text-transform:capitalize;">${b.name}</span>
+                    <span style="color:var(--accent-color); font-weight:bold;">${b.count}</span>
+                </div>
+            `).join('') || '<p style="color:var(--text-secondary)">No hay datos</p>';
+        }
+        
+        // Renderizar Gráficas
+        renderCharts(stats.sales_history, stats.top_products);
+        
+        // Renderizar Stock Crítico
+        renderCriticalStock(stats.critical_stock);
         
         const shirtsRes = await fetch(`${API_URL}/shirts`);
         adminState.shirts = await shirtsRes.json();
         applyInventoryFilter();
     } catch (err) { console.error(err); }
+}
+
+function renderCharts(salesHistory, topProducts) {
+    // 1. GRÁFICO DE VENTAS (Línea)
+    const salesCtx = document.getElementById('salesChart');
+    if (salesCtx) {
+        if (adminState.salesChart) {
+            adminState.salesChart.destroy();
+        }
+
+        const labels = salesHistory.map(item => {
+            const parts = item.date.split('-');
+            if (parts.length === 3) return `${parts[2]}/${parts[1]}`;
+            return item.date;
+        });
+        const data = salesHistory.map(item => item.total);
+
+        const ctx = salesCtx.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+        gradient.addColorStop(0, 'rgba(0, 102, 255, 0.4)');
+        gradient.addColorStop(1, 'rgba(0, 102, 255, 0.0)');
+
+        adminState.salesChart = new Chart(salesCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Ventas ($)',
+                    data: data,
+                    borderColor: '#0066ff',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#0066ff',
+                    pointBorderColor: '#fff',
+                    pointHoverRadius: 6,
+                    fill: true,
+                    backgroundColor: gradient,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#121215',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return ` Ventas: $${context.raw.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#8e8e93', font: { family: 'Inter', size: 10 } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: {
+                            color: '#8e8e93',
+                            font: { family: 'Inter', size: 10 },
+                            callback: value => `$${value}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. GRÁFICO DE PRODUCTOS MÁS VENDIDOS (Barras horizontales)
+    const topCtx = document.getElementById('topProductsChart');
+    if (topCtx) {
+        if (adminState.topProductsChart) {
+            adminState.topProductsChart.destroy();
+        }
+
+        const labels = topProducts.map(p => p.name.length > 20 ? p.name.substring(0, 18) + '...' : p.name);
+        const data = topProducts.map(p => p.quantity);
+
+        adminState.topProductsChart = new Chart(topCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Unidades Vendidas',
+                    data: data,
+                    backgroundColor: 'rgba(0, 102, 255, 0.85)',
+                    hoverBackgroundColor: '#0066ff',
+                    borderRadius: 4,
+                    borderWidth: 0,
+                    barThickness: 16
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#121215',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        displayColors: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#8e8e93', font: { family: 'Inter', size: 10 } }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: '#ffffff', font: { family: 'Inter', size: 10, weight: '500' } }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function renderCriticalStock(criticalStock) {
+    const tbody = document.getElementById('critical-stock-table-body');
+    if (!tbody) return;
+
+    if (criticalStock.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 1.5rem; font-size: 0.85rem;">
+            ✅ Todo el inventario está en niveles óptimos.
+        </td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = criticalStock.map(item => {
+        const sizesBadges = item.low_sizes.map(ls => {
+            const badgeBg = ls.stock === 0 ? 'rgba(255, 62, 108, 0.15)' : 'rgba(255, 179, 0, 0.15)';
+            const badgeBorder = ls.stock === 0 ? '#ff3e6c' : '#ffb300';
+            const badgeText = ls.stock === 0 ? 'Agotado' : `${ls.stock} unids.`;
+            return `
+                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; background: ${badgeBg}; color: ${badgeBorder}; border: 1px solid ${badgeBorder}33; font-size: 0.75rem; font-weight: bold; margin-right: 5px; margin-bottom: 5px;">
+                    ${ls.size}: ${badgeText}
+                </span>
+            `;
+        }).join('');
+
+        return `
+            <tr>
+                <td><img src="${item.image_url}" class="img-preview-mini" onerror="this.src='https://via.placeholder.com/40'"></td>
+                <td style="font-weight: 500; font-size: 0.85rem; white-space: normal;">${item.name}</td>
+                <td style="text-transform: capitalize; font-size: 0.85rem; color: var(--text-secondary);">${item.brand}</td>
+                <td style="white-space: normal;">${sizesBadges}</td>
+                <td>
+                    <button class="btn-action btn-edit" onclick="editShirt(${item.id})" style="padding: 4px 8px; font-size: 0.75rem; margin: 0; display: inline-block; width: auto;">Reabastecer</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
 async function loadCategories() {

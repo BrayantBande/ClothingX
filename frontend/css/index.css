@@ -987,10 +987,30 @@ header {
    RESPONSIVE DESIGN
    ========================================= */
 @media (max-width: 992px) {
-  .logo { font-size: 1.2rem; }
+  .logo { 
+    font-size: 1.2rem; 
+    flex-shrink: 0;
+  }
   .desktop-nav { display: none; }
   .global-search { display: none !important; }
-  .hamburger-btn { display: block; }
+  
+  .header-tools {
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+  
+  .cart-btn {
+    flex-shrink: 0;
+  }
+  
+  .hamburger-btn { 
+    display: block; 
+    flex-shrink: 0;
+    color: var(--text-primary);
+  }
+  .hamburger-btn svg {
+    stroke: var(--text-primary);
+  }
   
   .page-layout {
     grid-template-columns: 1fr;

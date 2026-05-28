@@ -23,35 +23,33 @@
     <!-- HEADER -->
     <header id="main-header" style="background: rgba(10, 10, 12, 0.95); border-bottom: 1px solid rgba(255,255,255,0.05);">
         <div class="logo"><a href="index.html">SHIRT<span>X</span></a></div>
-        <div style="display: flex; align-items: center; gap: 2rem;">
-            <nav class="desktop-nav">
-                <ul class="nav-links">
-                    <li><a href="index.html">Inicio</a></li>
-                    <li><a href="catalogo.html" style="color: var(--text-primary);">Catálogo</a></li>
-                </ul>
-            </nav>
-            <div class="header-tools">
-                <div class="global-search" style="display:flex; align-items:center; background:rgba(255,255,255,0.03); border-radius:20px; padding:4px 12px; border:1px solid rgba(255,255,255,0.05); margin-right: 15px;">
-                    <input type="text" id="global-search-input" placeholder="Buscar..." style="background:transparent; border:none; color:white; width:100px; outline:none; font-family:var(--font-family); font-size:0.9rem;" onkeypress="if(event.key==='Enter') executeGlobalSearch()">
-                    <button onclick="executeGlobalSearch()" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:0; display:flex; align-items:center;">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <path d="M21 21l-4.35-4.35"></path>
-                        </svg>
-                    </button>
-                </div>
-                <button class="cart-btn" id="open-cart" aria-label="Abrir carrito">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    <span class="cart-count">0</span>
-                </button>
-                <button class="hamburger-btn" id="hamburger-btn" aria-label="Menú">
-                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
+        <nav class="desktop-nav">
+            <ul class="nav-links">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="catalogo.html" style="color: var(--text-primary);">Catálogo</a></li>
+            </ul>
+        </nav>
+        <div class="header-tools">
+            <div class="global-search" style="display:flex; align-items:center; background:rgba(255,255,255,0.03); border-radius:20px; padding:4px 12px; border:1px solid rgba(255,255,255,0.05); margin-right: 15px;">
+                <input type="text" id="global-search-input" placeholder="Buscar..." style="background:transparent; border:none; color:white; width:100px; outline:none; font-family:var(--font-family); font-size:0.9rem;" onkeypress="if(event.key==='Enter') executeGlobalSearch()">
+                <button onclick="executeGlobalSearch()" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:0; display:flex; align-items:center;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
                     </svg>
                 </button>
             </div>
+            <button class="cart-btn" id="open-cart" aria-label="Abrir carrito">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                <span class="cart-count">0</span>
+            </button>
+            <button class="hamburger-btn" id="hamburger-btn" aria-label="Menú">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
         </div>
     </header>
 
