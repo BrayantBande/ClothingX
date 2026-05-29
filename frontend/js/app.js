@@ -445,12 +445,14 @@ function renderSingleShirt(shirt) {
         if(shirt.sizes) shirt.sizes.split(',').forEach(s => sizesObj[s.trim()] = 1);
     }
     
-    const availableSizes = Object.entries(sizesObj).filter(([s, q]) => q > 0);
-    const sizeOptions = availableSizes.map(([size, qty]) => `<option value="${size}" data-qty="${qty}">${size}</option>`).join('');
+    const sizeOrder = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+    const sortedSizes = Object.entries(sizesObj).sort((a, b) => {
+        return sizeOrder.indexOf(a[0].toUpperCase()) - sizeOrder.indexOf(b[0].toUpperCase());
+    });
+    const availableSizes = sortedSizes.filter(([s, q]) => q > 0);
     
-    // Configurar colores
+    // Configurar diseños
     const colorsList = shirt.colors ? shirt.colors.split(',') : [];
-    const colorOptions = colorsList.map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
     
     const stockMsg = availableSizes.length > 0 ? "Selecciona talla y diseño para ver disponibilidad" : "Agotado";
     const disableBtn = availableSizes.length === 0 ? "disabled" : "";
@@ -468,7 +470,7 @@ function renderSingleShirt(shirt) {
         <div class="product-thumbnails">
             ${allImages.map((url, idx) => `
                 <img src="${url}" class="thumb ${idx === 0 ? 'active' : ''}" 
-                     onclick="changeProductImg(this, '${url}')"
+                     onclick="changeProductImg(this, '${url}', ${idx})"
                      onerror="this.style.display='none'">
             `).join('')}
         </div>
@@ -490,18 +492,51 @@ function renderSingleShirt(shirt) {
                 <p class="product-meta"><strong>Categoría:</strong> <span style="text-transform: capitalize;">${shirt.category}</span></p>
                 
                 <div class="product-actions">
-                    <p id="stock-indicator-${shirt.id}" style="color: var(--accent-color); font-weight: bold; margin-bottom: 10px; font-size: 0.9rem;">${stockMsg}</p>
-                    <div class="product-selection-grid">
-                        <div class="selectors-row">
-                            <select class="size-selector-large" id="size-${shirt.id}" onchange="updateStockIndicator(${shirt.id}, this)">
-                                <option value="" disabled selected>Talla</option>
-                                ${sizeOptions}
-                            </select>
-                            <select class="size-selector-large" id="color-${shirt.id}">
-                                <option value="" disabled selected>Diseño / Modelo</option>
-                                ${colorOptions}
-                            </select>
+                    <p id="stock-indicator-${shirt.id}" style="color: var(--accent-color); font-weight: bold; margin-bottom: 15px; font-size: 0.9rem;">${stockMsg}</p>
+                    
+                    <div class="pills-selection-wrapper">
+                        <!-- TALLAS PILLS -->
+                        <div class="pills-section">
+                            <span class="pills-label">Talla</span>
+                            <div class="size-pills" id="size-pills-${shirt.id}">
+                                ${sortedSizes.map(([size, qty]) => {
+                                    const isOutOfStock = qty <= 0;
+                                    const disabledClass = isOutOfStock ? 'disabled' : '';
+                                    return `
+                                        <button type="button" class="size-pill ${disabledClass}" 
+                                                data-size="${size}" data-qty="${qty}"
+                                                onclick="selectSize('${size}', ${shirt.id}, this, ${qty})"
+                                                ${isOutOfStock ? 'disabled' : ''}>
+                                            ${size}
+                                        </button>
+                                    `;
+                                }).join('')}
+                            </div>
+                            <input type="hidden" id="size-${shirt.id}" value="">
                         </div>
+
+                        <!-- DISEÑOS PILLS -->
+                        ${colorsList.length > 0 ? `
+                        <div class="pills-section">
+                            <span class="pills-label">Diseño / Modelo</span>
+                            <div class="design-pills" id="design-pills-${shirt.id}">
+                                ${colorsList.map((designName, idx) => {
+                                    const trimmed = designName.trim();
+                                    return `
+                                        <button type="button" class="design-pill" 
+                                                data-design="${trimmed}" data-shirt-id="${shirt.id}"
+                                                onclick="selectDesign('${trimmed}', ${shirt.id}, this, ${idx})">
+                                            ${trimmed}
+                                        </button>
+                                    `;
+                                }).join('')}
+                            </div>
+                            <input type="hidden" id="color-${shirt.id}" value="">
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="product-selection-grid" style="margin-top: 1.5rem;">
                         <div class="cart-row">
                             <input type="number" id="qty-${shirt.id}" class="qty-selector" value="1" min="1" title="Cantidad" ${disableBtn}>
                             <button class="btn-primary btn-add-to-cart" onclick="addToCart(${shirt.id}, this)" ${disableBtn}>
@@ -590,26 +625,85 @@ function renderRelatedShirts(currentShirt) {
     renderShirts(finalRelated, container);
 }
 
-window.updateStockIndicator = function(shirtId, selectElement) {
+window.updateStockIndicator = function(shirtId, qty) {
     const qtyInput = document.getElementById(`qty-${shirtId}`);
     const indicator = document.getElementById(`stock-indicator-${shirtId}`);
-    const selectedOption = selectElement.options[selectElement.selectedIndex];
     
-    if (selectedOption && selectedOption.dataset.qty) {
-        const maxQty = parseInt(selectedOption.dataset.qty);
+    if (indicator && qty !== undefined && qty !== null) {
+        const maxQty = parseInt(qty);
         indicator.innerText = `Disponibles: ${maxQty} unidades`;
-        qtyInput.max = maxQty;
-        if (parseInt(qtyInput.value) > maxQty) {
-            qtyInput.value = maxQty;
+        if (qtyInput) {
+            qtyInput.max = maxQty;
+            if (parseInt(qtyInput.value) > maxQty) {
+                qtyInput.value = maxQty;
+            }
         }
     }
 };
 
-window.changeProductImg = function(thumb, url) {
+window.selectSize = function(size, shirtId, element, qty) {
+    // 1. Guardar valor en input oculto
+    const input = document.getElementById(`size-${shirtId}`);
+    if (input) input.value = size;
+    
+    // 2. Resaltar botón activo
+    const container = document.getElementById(`size-pills-${shirtId}`);
+    if (container) {
+        container.querySelectorAll('.size-pill').forEach(btn => btn.classList.remove('active'));
+    }
+    element.classList.add('active');
+    
+    // 3. Actualizar stock
+    window.updateStockIndicator(shirtId, qty);
+};
+
+window.selectDesign = function(design, shirtId, element, idx) {
+    // 1. Guardar valor en input oculto
+    const input = document.getElementById(`color-${shirtId}`);
+    if (input) input.value = design;
+    
+    // 2. Resaltar botón activo
+    const container = document.getElementById(`design-pills-${shirtId}`);
+    if (container) {
+        container.querySelectorAll('.design-pill').forEach(btn => btn.classList.remove('active'));
+    }
+    element.classList.add('active');
+    
+    // 3. Cambiar la imagen principal al corresponder con el índice
+    if (idx !== undefined && idx !== null) {
+        const thumbs = document.querySelectorAll('.product-thumbnails .thumb');
+        if (thumbs.length > idx) {
+            const newUrl = thumbs[idx].src;
+            document.getElementById('main-product-img').src = newUrl;
+            thumbs.forEach(t => t.classList.remove('active'));
+            thumbs[idx].classList.add('active');
+        }
+    }
+};
+
+window.changeProductImg = function(thumb, url, idx) {
     document.getElementById('main-product-img').src = url;
     document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
     thumb.classList.add('active');
-}
+    
+    // Pre-seleccionar el diseño correspondiente sin activar bucle infinito
+    if (idx !== undefined && idx !== null) {
+        const designPills = document.querySelectorAll('.design-pill');
+        if (designPills.length > idx) {
+            const pill = designPills[idx];
+            const designName = pill.getAttribute('data-design');
+            const shirtId = pill.getAttribute('data-shirt-id');
+            
+            // Guardar valor en input oculto
+            const input = document.getElementById(`color-${shirtId}`);
+            if (input) input.value = designName;
+            
+            // Resaltar botón activo
+            pill.parentElement.querySelectorAll('.design-pill').forEach(btn => btn.classList.remove('active'));
+            pill.classList.add('active');
+        }
+    }
+};
 
 function setupFilters(container) {
     const filterContainer = document.getElementById('dynamic-filters-container');
