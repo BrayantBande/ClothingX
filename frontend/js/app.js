@@ -965,6 +965,17 @@ function renderCartItems() {
         const qty = parseInt(item.quantity) || 1;
         const price = parseFloat(item.price) || 0;
         total += price * qty;
+        
+        // Obtener stock máximo disponible para este artículo
+        const shirt = state.shirts.find(s => s.id === item.id);
+        let maxStock = 999;
+        if (shirt && shirt.sizes) {
+            try {
+                const sizesObj = JSON.parse(shirt.sizes);
+                maxStock = sizesObj[item.size] || 0;
+            } catch(e) {}
+        }
+        
         const itemEl = document.createElement('div');
         itemEl.className = 'cart-item';
         itemEl.innerHTML = `
@@ -975,7 +986,7 @@ function renderCartItems() {
                 <div class="cart-item-controls">
                     <button onclick="changeCartQty(${index}, -1)">-</button>
                     <span>${qty}</span>
-                    <button onclick="changeCartQty(${index}, 1)">+</button>
+                    <button onclick="changeCartQty(${index}, 1)" ${qty >= maxStock ? 'disabled style="opacity: 0.3; cursor: not-allowed;" title="Límite de stock alcanzado"' : ''}>+</button>
                     <button class="remove-item" onclick="removeFromCart(${index})">✕</button>
                 </div>
             </div>
@@ -986,6 +997,21 @@ function renderCartItems() {
 }
 
 window.changeCartQty = (index, delta) => {
+    const item = state.cart[index];
+    if (delta > 0) {
+        const shirt = state.shirts.find(s => s.id === item.id);
+        let maxStock = 999;
+        if (shirt && shirt.sizes) {
+            try {
+                const sizesObj = JSON.parse(shirt.sizes);
+                maxStock = sizesObj[item.size] || 0;
+            } catch(e) {}
+        }
+        if (item.quantity + delta > maxStock) {
+            window.showToast(`Lo sentimos, no hay más stock disponible de esta talla (Límite: ${maxStock}).`, "error");
+            return;
+        }
+    }
     state.cart[index].quantity += delta;
     if(state.cart[index].quantity < 1) removeFromCart(index);
     else { saveCart(); renderCartItems(); updateCartCount(); }
@@ -1185,7 +1211,27 @@ window.addToCart = (shirtId, btnElement) => {
         return;
     }
     
+    // Obtener stock máximo disponible para esta talla
+    let maxStock = 999;
+    if (shirt && shirt.sizes) {
+        try {
+            const sizesObj = JSON.parse(shirt.sizes);
+            maxStock = sizesObj[size] || 0;
+        } catch (e) {}
+    }
+
     const existing = state.cart.find(i => i.id === shirt.id && i.size === size && i.color === color);
+    const existingQty = existing ? existing.quantity : 0;
+    
+    if (existingQty + qty > maxStock) {
+        if (existingQty > 0) {
+            window.showToast(`Solo quedan ${maxStock} unidades disponibles de esta talla. Ya tienes ${existingQty} en tu carrito.`, "error");
+        } else {
+            window.showToast(`Solo quedan ${maxStock} unidades disponibles de esta talla.`, "error");
+        }
+        return;
+    }
+    
     if(existing) existing.quantity += qty;
     else state.cart.push({ id: shirt.id, name: shirt.name, price: shirt.price, size: size, color: color, quantity: qty, image: shirt.image_url });
     
