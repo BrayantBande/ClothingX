@@ -452,7 +452,7 @@ function renderSingleShirt(shirt) {
     const colorsList = shirt.colors ? shirt.colors.split(',') : [];
     const colorOptions = colorsList.map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
     
-    const stockMsg = availableSizes.length > 0 ? "Selecciona talla y color para ver disponibilidad" : "Agotado";
+    const stockMsg = availableSizes.length > 0 ? "Selecciona talla y diseño para ver disponibilidad" : "Agotado";
     const disableBtn = availableSizes.length === 0 ? "disabled" : "";
     
     const descHTML = shirt.description ? shirt.description : 'Camisa streetwear de alta calidad, costuras reforzadas y corte premium.';
@@ -498,7 +498,7 @@ function renderSingleShirt(shirt) {
                                 ${sizeOptions}
                             </select>
                             <select class="size-selector-large" id="color-${shirt.id}">
-                                <option value="" disabled selected>Color</option>
+                                <option value="" disabled selected>Diseño / Modelo</option>
                                 ${colorOptions}
                             </select>
                         </div>
@@ -877,7 +877,7 @@ function renderCartItems() {
             <div class="cart-item-img"><img src="${item.image}"></div>
             <div class="cart-item-info">
                 <h4>${item.name}</h4>
-                <p>Talla: ${item.size} | Color: ${item.color} | $${price.toFixed(2)}</p>
+                <p>Talla: ${item.size} | Diseño: ${item.color} | $${price.toFixed(2)}</p>
                 <div class="cart-item-controls">
                     <button onclick="changeCartQty(${index}, -1)">-</button>
                     <span>${qty}</span>
@@ -1060,7 +1060,7 @@ function getWhatsAppUrl(customerName, totalAmount, payMethod, cartItems) {
     items.forEach(item => {
         const qty = parseInt(item.quantity) || 1;
         const price = parseFloat(item.price) || 0;
-        message += `- *${qty}x* ${item.name.toUpperCase()} [Talla: ${item.size} | Color: ${item.color}] ($${price.toFixed(2)} c/u)\n`;
+        message += `- *${qty}x* ${item.name.toUpperCase()} [Talla: ${item.size} | Diseño: ${item.color}] ($${price.toFixed(2)} c/u)\n`;
     });
 
     message += `\n\u{1F4B5} *TOTAL A PAGAR: $${totalAmount.toFixed(2)}*\n\n`;
@@ -1087,7 +1087,7 @@ window.addToCart = (shirtId, btnElement) => {
     }
     
     if(!color) {
-        window.showToast("Por favor, selecciona un color primero.", "error");
+        window.showToast("Por favor, selecciona un diseño o modelo primero.", "error");
         return;
     }
     

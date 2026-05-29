@@ -1125,7 +1125,7 @@ function renderAdminOrders(orders) {
             console.error("Error parsing items_json for order ID", order.id, e);
         }
         const itemsDesc = Array.isArray(items) 
-            ? items.map(i => `${i.quantity}x ${i.name || 'Producto'} (Talla: ${i.size || 'N/A'} | Color: ${i.color || 'N/A'})`).join('<br>')
+            ? items.map(i => `${i.quantity}x ${i.name || 'Producto'} (Talla: ${i.size || 'N/A'} | Diseño: ${i.color || 'N/A'})`).join('<br>')
             : 'Error al cargar artículos';
         
         const date = new Date(order.created_at).toLocaleString();
