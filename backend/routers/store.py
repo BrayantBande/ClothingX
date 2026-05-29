@@ -77,6 +77,41 @@ def upload_to_supabase(file_content: bytes, filename: str, content_type: str) ->
         print(f"Excepción subiendo a Supabase Storage: {e}")
         return None
 
+def delete_from_supabase(file_url: str) -> bool:
+    if not SUPABASE_URL or not SUPABASE_KEY or not file_url:
+        return False
+    if not file_url.startswith("http") or "supabase.co" not in file_url:
+        return False
+    try:
+        public_prefix = f"/storage/v1/object/public/{SUPABASE_BUCKET}/"
+        private_prefix = f"/storage/v1/object/{SUPABASE_BUCKET}/"
+        
+        if public_prefix in file_url:
+            filename = file_url.split(public_prefix)[-1]
+        elif private_prefix in file_url:
+            filename = file_url.split(private_prefix)[-1]
+        else:
+            filename = file_url.split("/")[-1]
+            
+        base_url = SUPABASE_URL.rstrip("/")
+        delete_url = f"{base_url}/storage/v1/object/{SUPABASE_BUCKET}/{filename}"
+        
+        headers = {
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "ApiKey": SUPABASE_KEY
+        }
+        
+        response = requests.delete(delete_url, headers=headers)
+        if response.status_code in [200, 204]:
+            print(f"DEBUG: Archivo {filename} eliminado exitosamente de Supabase Storage")
+            return True
+        else:
+            print(f"Supabase delete API error (Status {response.status_code}): {response.text}")
+            return False
+    except Exception as e:
+        print(f"Excepción eliminando de Supabase Storage: {e}")
+        return False
+
 def compress_and_base64(file_content: bytes, filename: str, content_type: str) -> str:
     try:
         img = Image.open(BytesIO(file_content))
@@ -217,6 +252,11 @@ def delete_banner(banner_id: int, db: Session = Depends(get_db), current_admin: 
     db_banner = db.query(models.Banner).filter(models.Banner.id == banner_id).first()
     if not db_banner:
         raise HTTPException(status_code=404, detail="No encontrado")
+    
+    # Eliminar imagen de Supabase Storage
+    if db_banner.image_url:
+        delete_from_supabase(db_banner.image_url)
+        
     db.delete(db_banner)
     db.commit()
     invalidate_store_cache()

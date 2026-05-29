@@ -7,6 +7,7 @@ import models
 import schemas
 import auth
 from database import get_db
+from routers.store import delete_from_supabase
 
 router = APIRouter(prefix="/api", tags=["Catalog"])
 
@@ -90,11 +91,42 @@ def update_shirt(shirt_id: int, shirt_update: schemas.ShirtCreate, db: Session =
     if db_shirt is None:
         raise HTTPException(status_code=404, detail="Camisa no encontrada")
     
+    # Guardar imágenes viejas para comparar
+    old_main_image = db_shirt.image_url
+    old_additional_images = db_shirt.additional_images or ""
+    
     for key, value in shirt_update.model_dump().items():
         setattr(db_shirt, key, value)
         
     db.commit()
     db.refresh(db_shirt)
+    
+    # Identificar y eliminar imágenes antiguas obsoletas de Supabase
+    new_main_image = db_shirt.image_url
+    new_additional_images = db_shirt.additional_images or ""
+    
+    old_urls = set()
+    if old_main_image:
+        old_urls.add(old_main_image.strip())
+    if old_additional_images:
+        for url in old_additional_images.split(","):
+            url_stripped = url.strip()
+            if url_stripped:
+                old_urls.add(url_stripped)
+                
+    new_urls = set()
+    if new_main_image:
+        new_urls.add(new_main_image.strip())
+    if new_additional_images:
+        for url in new_additional_images.split(","):
+            url_stripped = url.strip()
+            if url_stripped:
+                new_urls.add(url_stripped)
+                
+    obsolete_urls = old_urls - new_urls
+    for url in obsolete_urls:
+        delete_from_supabase(url)
+        
     invalidate_catalog_cache()
     return db_shirt
 
@@ -104,6 +136,17 @@ def delete_shirt(shirt_id: int, db: Session = Depends(get_db), current_admin: mo
     if db_shirt is None:
         raise HTTPException(status_code=404, detail="Camisa no encontrada")
     
+    # Eliminar imagen principal de Supabase
+    if db_shirt.image_url:
+        delete_from_supabase(db_shirt.image_url)
+        
+    # Eliminar imágenes adicionales de Supabase
+    if db_shirt.additional_images:
+        for img_url in db_shirt.additional_images.split(","):
+            img_url_stripped = img_url.strip()
+            if img_url_stripped:
+                delete_from_supabase(img_url_stripped)
+                
     db.delete(db_shirt)
     db.commit()
     invalidate_catalog_cache()
