@@ -1,7 +1,10 @@
 import os
-from fastapi import FastAPI
+import logging
+import traceback
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 
 import models
 import auth
@@ -38,12 +41,33 @@ try:
 except Exception as e:
     print(f"Advertencia al inicializar admin por defecto: {e}")
 
+# Configuración del logging estándar de Python
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger("api")
+
 # Instancia principal de FastAPI
 app = FastAPI(
     title="Shirt Store API", 
     description="API robusta y modularizada para el catálogo de camisas (Streetwear)", 
     version="1.0.0"
 )
+
+# Middleware global para capturar excepciones no controladas
+@app.middleware("http")
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as e:
+        logger.error(f"Error crítico no controlado en la ruta {request.url.path}: {e}")
+        logger.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Error interno del servidor. Por favor, reporta este problema si persiste."}
+        )
 
 # Carpeta de subidas local (como fallback)
 UPLOAD_DIR = "uploads"
