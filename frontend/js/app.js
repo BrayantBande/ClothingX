@@ -984,9 +984,11 @@ function renderCartItems() {
                 <h4>${item.name}</h4>
                 <p>Talla: ${item.size} | Diseño: ${item.color} | $${price.toFixed(2)}</p>
                 <div class="cart-item-controls">
-                    <button onclick="changeCartQty(${index}, -1)">-</button>
-                    <span>${qty}</span>
-                    <button onclick="changeCartQty(${index}, 1)" ${qty >= maxStock ? 'disabled style="opacity: 0.3; cursor: not-allowed;" title="Límite de stock alcanzado"' : ''}>+</button>
+                    <div class="qty-btn-group">
+                        <button onclick="changeCartQty(${index}, -1)">-</button>
+                        <span>${qty}</span>
+                        <button onclick="changeCartQty(${index}, 1)" ${qty >= maxStock ? 'disabled style="opacity: 0.3; cursor: not-allowed;" title="Límite de stock alcanzado"' : ''}>+</button>
+                    </div>
                     <button class="remove-item" onclick="removeFromCart(${index})">✕</button>
                 </div>
             </div>
