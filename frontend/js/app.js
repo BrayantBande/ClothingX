@@ -770,6 +770,15 @@ function setupSearch(container) {
             applyCombinedFilters(container);
         });
     }
+    const globalSearchInput = document.getElementById('global-search-input');
+    if (globalSearchInput && window.location.pathname.includes('catalogo.html')) {
+        globalSearchInput.addEventListener('input', (e) => {
+            if (searchInput) searchInput.value = e.target.value;
+            state.searchQuery = e.target.value.toLowerCase().trim();
+            state.currentPage = 1;
+            applyCombinedFilters(container);
+        });
+    }
 }
 
 function applyCombinedFilters(container) {
