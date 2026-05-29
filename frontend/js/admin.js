@@ -12,6 +12,27 @@ const adminState = {
 let orderSearchQuery = '';
 let orderStatusFilter = 'ALL';
 
+function splitUrls(urlsString) {
+    if (!urlsString) return [];
+    if (urlsString.startsWith('[')) {
+        try {
+            return JSON.parse(urlsString);
+        } catch(e) {}
+    }
+    const parts = urlsString.split(',');
+    const urls = [];
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i].trim();
+        if (part.startsWith('data:image') && i + 1 < parts.length) {
+            urls.push(part + ',' + parts[i+1].trim());
+            i++;
+        } else if (part) {
+            urls.push(part);
+        }
+    }
+    return urls;
+}
+
 // --- PROTECCIÓN Y AUTENTICACIÓN ---
 const token = localStorage.getItem("adminToken");
 if (!token) {
@@ -226,7 +247,7 @@ function populateMonthFilter() {
     const select = document.getElementById('dashboard-month-filter');
     if (!select) return;
     
-    select.innerHTML = '<option value="last30">Últimos 30 días</option>';
+    select.innerHTML = '<option value="last30">Resumen 6 Meses (General)</option>';
     
     const monthNames = [
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -839,25 +860,25 @@ function renderInventory(shirts) {
 async function handleFormSubmit(e) {
     e.preventDefault();
     const id = document.getElementById('edit-id').value;
-    const mainFile = document.getElementById('form-image-file').files[0];
-    const extraFiles = document.getElementById('form-extra-files').files;
+    const imageFiles = document.getElementById('form-images').files;
     let mainImageUrl = document.getElementById('form-image-url').value;
     let extraImageUrls = document.getElementById('form-extra-urls').value;
 
     try {
-        if (mainFile) {
+        if (imageFiles && imageFiles.length > 0) {
             const fd = new FormData();
-            fd.append('files', mainFile);
+            for (let f of imageFiles) {
+                fd.append('files', f);
+            }
             const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd });
+            if (!res.ok) throw new Error("Fallo al subir imágenes");
             const data = await res.json();
             mainImageUrl = data.urls[0];
-        }
-        if (extraFiles.length > 0) {
-            const fd = new FormData();
-            for (let f of extraFiles) fd.append('files', f);
-            const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd });
-            const data = await res.json();
-            extraImageUrls = data.urls.join(',');
+            if (data.urls.length > 1) {
+                extraImageUrls = data.urls.slice(1).join(',');
+            } else {
+                extraImageUrls = "";
+            }
         }
 
         const shirtData = {
@@ -937,7 +958,7 @@ function renderEditPreviews(mainUrl, extraUrlsString) {
         html += `<p style="font-size:0.7rem; color:var(--text-secondary); margin-bottom:5px;">Fotos Extra (Toca la ✕ para quitar):</p>
                  <div style="display:flex; gap:10px; flex-wrap:wrap;">`;
         
-        const extraUrls = extraUrlsString.split(',').filter(url => url.trim() !== "");
+        const extraUrls = splitUrls(extraUrlsString);
         extraUrls.forEach((url, index) => {
             html += `
                 <div style="position:relative; width:50px; height:50px;">
@@ -955,7 +976,7 @@ function renderEditPreviews(mainUrl, extraUrlsString) {
 
 window.removeExtraImage = function(urlToRemove) {
     const input = document.getElementById('form-extra-urls');
-    let urls = input.value.split(',').filter(url => url.trim() !== "" && url.trim() !== urlToRemove);
+    let urls = splitUrls(input.value).filter(url => url !== urlToRemove);
     input.value = urls.join(',');
     
     const mainUrl = document.getElementById('form-image-url').value;
@@ -985,11 +1006,29 @@ window.closeModal = () => {
     document.getElementById('shoe-modal').style.display = 'none';
     document.getElementById('shoe-form').reset();
     document.getElementById('edit-id').value = '';
-    document.getElementById('main-img-status').innerText = "Ningún archivo seleccionado";
-    document.getElementById('extra-img-status').innerText = "0 archivos seleccionados";
+    const imgStatus = document.getElementById('product-images-status');
+    if (imgStatus) {
+        imgStatus.innerText = "Ningún archivo seleccionado";
+        imgStatus.style.color = "var(--text-secondary)";
+    }
     const previews = document.getElementById('edit-previews');
     if (previews) previews.innerHTML = "";
     document.getElementById('size-inventory-container').innerHTML = '';
+};
+
+window.updateProductFormFiles = function(input) {
+    const status = document.getElementById('product-images-status');
+    if (status) {
+        if (input.files && input.files.length > 0) {
+            status.innerText = input.files.length === 1 
+                ? `📄 ${input.files[0].name}` 
+                : `🗂️ ${input.files.length} archivos seleccionados`;
+            status.style.color = "var(--accent-color)";
+        } else {
+            status.innerText = "Ningún archivo seleccionado";
+            status.style.color = "var(--text-secondary)";
+        }
+    }
 };
 
 // --- LOGICA DE TALLAS E INVENTARIO ---

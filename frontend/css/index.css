@@ -1108,3 +1108,173 @@ header {
     margin-top: 1.5rem !important;
   }
 }
+
+/* =========================================
+   VISOR DE IMÁGENES CON ZOOM (MERCADO LIBRE STYLE)
+   ========================================= */
+.zoom-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 10, 12, 0.96);
+  z-index: 5000;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.zoom-modal.active {
+  display: flex;
+}
+
+.zoom-container {
+  position: relative;
+  width: 90%;
+  height: 90%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.zoom-img-wrapper {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: zoom-in;
+  transition: transform 0.1s ease-out;
+}
+
+.zoom-modal-img {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  transition: transform 0.3s cubic-bezier(0.1, 0.8, 0.25, 1);
+  pointer-events: none;
+}
+
+/* Cuando la imagen está con zoom activo */
+.zoom-img-wrapper.zoomed {
+  cursor: zoom-out;
+}
+
+.zoom-img-wrapper.zoomed .zoom-modal-img {
+  transform: scale(2.2);
+}
+
+.zoom-close {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5100;
+  transition: all 0.25s ease;
+}
+
+.zoom-close:hover {
+  background: white;
+  color: black;
+  transform: scale(1.1);
+}
+
+.zoom-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5100;
+  transition: all 0.25s ease;
+}
+
+.zoom-arrow:hover {
+  background: white;
+  color: black;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.zoom-prev {
+  left: 30px;
+}
+
+.zoom-next {
+  right: 30px;
+}
+
+/* Indicación flotante */
+.zoom-instruction {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px 18px;
+  border-radius: 30px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  z-index: 5100;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.main-img-container img {
+  cursor: zoom-in;
+}
+
+@media (max-width: 768px) {
+  .zoom-arrow {
+    width: 42px;
+    height: 42px;
+    font-size: 1.3rem;
+  }
+  .zoom-prev { left: 15px; }
+  .zoom-next { right: 15px; }
+  .zoom-close { top: 20px; right: 20px; width: 42px; height: 42px; font-size: 1.3rem; }
+  
+  .zoom-img-wrapper.zoomed .zoom-modal-img {
+    transform: scale(2.0);
+  }
+  .zoom-instruction {
+    font-size: 0.7rem;
+    padding: 6px 12px;
+    bottom: 20px;
+    width: 90%;
+    max-width: 280px;
+  }
+}

@@ -15,6 +15,27 @@ const state = {
     }
 };
 
+function splitUrls(urlsString) {
+    if (!urlsString) return [];
+    if (urlsString.startsWith('[')) {
+        try {
+            return JSON.parse(urlsString);
+        } catch(e) {}
+    }
+    const parts = urlsString.split(',');
+    const urls = [];
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i].trim();
+        if (part.startsWith('data:image') && i + 1 < parts.length) {
+            urls.push(part + ',' + parts[i+1].trim());
+            i++;
+        } else if (part) {
+            urls.push(part);
+        }
+    }
+    return urls;
+}
+
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Shirt X App Inicializada");
@@ -438,8 +459,8 @@ function renderSingleShirt(shirt) {
 
     const allImages = [shirt.image_url];
     if (shirt.additional_images) {
-        shirt.additional_images.split(',').forEach(url => {
-            if (url.trim()) allImages.push(url.trim());
+        splitUrls(shirt.additional_images).forEach(url => {
+            if (url) allImages.push(url);
         });
     }
 
@@ -509,7 +530,35 @@ function renderSingleShirt(shirt) {
         </div>
     `;
     const container = document.getElementById('product-detail-container');
-    if (container) container.innerHTML = html;
+    if (container) {
+        container.innerHTML = html;
+        
+        // Configurar visor de Zoom al hacer clic en la imagen principal
+        const mainImg = document.getElementById('main-product-img');
+        if (mainImg) {
+            mainImg.addEventListener('click', () => {
+                const allImages = [shirt.image_url];
+                if (shirt.additional_images) {
+                    splitUrls(shirt.additional_images).forEach(url => {
+                        if (url) allImages.push(url);
+                    });
+                }
+                
+                // Determinar la foto que está activa actualmente en la galería
+                let activeIdx = 0;
+                const activeThumb = document.querySelector('.thumb.active');
+                if (activeThumb) {
+                    const thumbs = Array.from(document.querySelectorAll('.thumb'));
+                    activeIdx = thumbs.indexOf(activeThumb);
+                    if (activeIdx === -1) activeIdx = 0;
+                }
+                
+                if (window.openZoom) {
+                    window.openZoom(allImages, activeIdx);
+                }
+            });
+        }
+    }
 }
 
 function renderRelatedShirts(currentShirt) {
@@ -800,6 +849,9 @@ function setupCartUI() {
     footer.style = "text-align: center; padding: 2rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 4rem; color: var(--text-secondary); font-size: 0.9rem;";
     footer.innerHTML = `&copy; ${new Date().getFullYear()} <span class="footer-store-name">${state.storeConfig?.store_name || 'SHIRT X'}</span>. Todos los derechos reservados.`;
     document.body.appendChild(footer);
+    
+    // Inicializar modal de zoom
+    setupZoomModal();
 }
 
 function renderCartItems() {
@@ -1075,4 +1127,209 @@ function setupScrollReveal() {
     const elements = document.querySelectorAll('.reveal');
     elements.forEach(el => observer.observe(el));
     window.scrollObserver = observer;
+}
+
+// =====================================================
+// 🔍 SISTEMA DE VISOR LIGHTBOX CON ZOOM INTERACTIVO
+// =====================================================
+let zoomImages = [];
+let zoomCurrentIndex = 0;
+let isZoomed = false;
+
+// Variables para arrastre táctil (drag) en móviles
+let isDragging = false;
+let startX = 0;
+let startY = 0;
+let translateX = 0;
+let translateY = 0;
+let lastTranslateX = 0;
+let lastTranslateY = 0;
+
+function setupZoomModal() {
+    let modal = document.getElementById('zoom-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'zoom-modal';
+        modal.className = 'zoom-modal';
+        modal.innerHTML = `
+            <button class="zoom-close" id="zoom-close-btn" aria-label="Cerrar modal">&times;</button>
+            <button class="zoom-arrow zoom-prev" id="zoom-prev-btn" aria-label="Imagen anterior">&#8249;</button>
+            <div class="zoom-container" id="zoom-container">
+                <div class="zoom-img-wrapper" id="zoom-img-wrapper">
+                    <img class="zoom-modal-img" id="zoom-modal-img" src="" alt="Zoom de producto">
+                </div>
+            </div>
+            <button class="zoom-arrow zoom-next" id="zoom-next-btn" aria-label="Siguiente imagen">&#8250;</button>
+            <div class="zoom-instruction" id="zoom-instruction">Toca la imagen para hacer zoom y arrastra/mueve para explorar</div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Asignar eventos de botones
+        const closeBtn = document.getElementById('zoom-close-btn');
+        closeBtn.addEventListener('click', closeZoom);
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal || e.target === document.getElementById('zoom-container')) {
+                closeZoom();
+            }
+        });
+        
+        // Inicializar eventos de Zoom
+        initZoomEvents();
+        
+        // Teclado
+        document.addEventListener('keydown', (e) => {
+            if (modal.classList.contains('active')) {
+                if (e.key === 'Escape') closeZoom();
+                if (e.key === 'ArrowLeft') prevZoomImg();
+                if (e.key === 'ArrowRight') nextZoomImg();
+            }
+        });
+    }
+}
+
+window.openZoom = function(images, startIndex = 0) {
+    setupZoomModal();
+    zoomImages = images;
+    zoomCurrentIndex = startIndex;
+    isZoomed = false;
+    
+    const modal = document.getElementById('zoom-modal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        updateZoomImg();
+    }
+};
+
+function closeZoom() {
+    const modal = document.getElementById('zoom-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        resetZoomState();
+    }
+}
+
+function updateZoomImg() {
+    const img = document.getElementById('zoom-modal-img');
+    const prevBtn = document.getElementById('zoom-prev-btn');
+    const nextBtn = document.getElementById('zoom-next-btn');
+    
+    if (!img || zoomImages.length === 0) return;
+    
+    img.src = zoomImages[zoomCurrentIndex];
+    resetZoomState();
+    
+    if (zoomImages.length <= 1) {
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+    } else {
+        prevBtn.style.display = 'flex';
+        nextBtn.style.display = 'flex';
+    }
+}
+
+function prevZoomImg() {
+    if (zoomImages.length <= 1) return;
+    zoomCurrentIndex = (zoomCurrentIndex - 1 + zoomImages.length) % zoomImages.length;
+    updateZoomImg();
+}
+
+function nextZoomImg() {
+    if (zoomImages.length <= 1) return;
+    zoomCurrentIndex = (zoomCurrentIndex + 1) % zoomImages.length;
+    updateZoomImg();
+}
+
+function resetZoomState() {
+    const wrapper = document.getElementById('zoom-img-wrapper');
+    const img = document.getElementById('zoom-modal-img');
+    if (wrapper && img) {
+        wrapper.classList.remove('zoomed');
+        img.style.transformOrigin = 'center center';
+        img.style.transform = '';
+        isZoomed = false;
+        
+        translateX = 0;
+        translateY = 0;
+        lastTranslateX = 0;
+        lastTranslateY = 0;
+    }
+}
+
+function initZoomEvents() {
+    const wrapper = document.getElementById('zoom-img-wrapper');
+    const img = document.getElementById('zoom-modal-img');
+    const prevBtn = document.getElementById('zoom-prev-btn');
+    const nextBtn = document.getElementById('zoom-next-btn');
+    
+    if (!wrapper || !img) return;
+    
+    prevBtn.addEventListener('click', (e) => { e.stopPropagation(); prevZoomImg(); });
+    nextBtn.addEventListener('click', (e) => { e.stopPropagation(); nextZoomImg(); });
+    
+    // Zoom al hacer clic
+    wrapper.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isZoomed = !isZoomed;
+        
+        if (isZoomed) {
+            wrapper.classList.add('zoomed');
+            if (!('ontouchstart' in window)) {
+                // Posicionar origen del zoom en PC
+                const rect = wrapper.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                img.style.transformOrigin = `${x}% ${y}%`;
+            }
+        } else {
+            resetZoomState();
+        }
+    });
+    
+    // Paneo con el mouse en PC
+    wrapper.addEventListener('mousemove', (e) => {
+        if (!isZoomed || ('ontouchstart' in window)) return;
+        
+        const rect = wrapper.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        
+        img.style.transformOrigin = `${x}% ${y}%`;
+    });
+    
+    // Desplazamiento táctil (drag) en móviles
+    wrapper.addEventListener('touchstart', (e) => {
+        if (!isZoomed) return;
+        isDragging = true;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        lastTranslateX = translateX;
+        lastTranslateY = translateY;
+    });
+    
+    wrapper.addEventListener('touchmove', (e) => {
+        if (!isZoomed || !isDragging) return;
+        e.preventDefault();
+        
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        
+        const deltaX = currentX - startX;
+        const deltaY = currentY - startY;
+        
+        translateX = lastTranslateX + deltaX;
+        translateY = lastTranslateY + deltaY;
+        
+        const maxDrag = 150;
+        translateX = Math.max(-maxDrag, Math.min(maxDrag, translateX));
+        translateY = Math.max(-maxDrag, Math.min(maxDrag, translateY));
+        
+        img.style.transform = `scale(2.0) translate(${translateX / 2}px, ${translateY / 2}px)`;
+    });
+    
+    wrapper.addEventListener('touchend', () => {
+        isDragging = false;
+    });
 }

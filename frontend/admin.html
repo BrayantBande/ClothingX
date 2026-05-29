@@ -48,6 +48,31 @@
         .stat-list-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
         .stat-list-scroll::-webkit-scrollbar-thumb { background: var(--accent-color); border-radius: 10px; }
 
+        /* Personalización de scrollbars oscuras premium para el sistema */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #121215;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            border: 2px solid #121215;
+            transition: background 0.2s;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        /* Soporte para Firefox */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.15) #121215;
+        }
+
         .admin-section {
             background: var(--surface-color);
             padding: 2rem;
@@ -116,8 +141,10 @@
             color: white;
         }
         .btn-action { padding: 0.5rem 1rem; font-size: 0.8rem; border-radius: 4px; font-weight: bold; white-space: nowrap; }
-        .btn-edit { background: #3344ff; color: white; }
-        .btn-delete { background: var(--accent-color); color: white; margin-left: 5px; }
+        .btn-edit { background: #0066ff; color: white; transition: background 0.2s; }
+        .btn-edit:hover { background: #0052cc; }
+        .btn-delete { background: #ff3e6c; color: white; margin-left: 5px; transition: background 0.2s; }
+        .btn-delete:hover { background: #e02f59; }
 
         .file-upload-wrapper {
             display: flex;
@@ -356,7 +383,7 @@
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <label for="dashboard-month-filter" style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap;">Ver Periodo:</label>
                         <select id="dashboard-month-filter" style="width: auto; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; font-size: 0.85rem; font-weight: 500; cursor: pointer; outline: none; transition: border-color 0.2s;">
-                            <option value="last30">Últimos 30 días</option>
+                            <option value="last30">Resumen 6 Meses (General)</option>
                         </select>
                     </div>
                 </div>
@@ -636,25 +663,15 @@
                     <div id="edit-previews" class="full-width" style="display:none; background:rgba(255,255,255,0.02); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px dashed rgba(255,255,255,0.1);"></div>
 
                     <div class="full-width">
-                        <label>Foto Principal</label>
+                        <label>Fotos del Producto (La primera será la principal, permite múltiples fotos)</label>
                         <div class="file-upload-wrapper">
-                            <label for="form-image-file" class="file-upload-label">
-                                <span>📁 Seleccionar Foto Principal</span>
-                                <input type="file" id="form-image-file" accept="image/*" onchange="updateFileName(this, 'main-img-status')">
+                            <label for="form-images" class="file-upload-label" style="background: #333;">
+                                <span>📸 Seleccionar Fotos</span>
+                                <input type="file" id="form-images" accept="image/*" multiple onchange="updateProductFormFiles(this)">
                             </label>
-                            <div id="main-img-status" class="file-status">Ningún archivo seleccionado</div>
+                            <div id="product-images-status" class="file-status">Ningún archivo seleccionado</div>
                         </div>
                         <input type="hidden" id="form-image-url">
-                    </div>
-                    <div class="full-width">
-                        <label>Fotos Adicionales (Galería)</label>
-                        <div class="file-upload-wrapper">
-                            <label for="form-extra-files" class="file-upload-label" style="background: #333;">
-                                <span>📸 Seleccionar Varias Fotos</span>
-                                <input type="file" id="form-extra-files" accept="image/*" multiple onchange="updateFileName(this, 'extra-img-status')">
-                            </label>
-                            <div id="extra-img-status" class="file-status">0 archivos seleccionados</div>
-                        </div>
                         <input type="hidden" id="form-extra-urls">
                     </div>
                 </div>
