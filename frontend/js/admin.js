@@ -1093,73 +1093,16 @@ window.switchTab = function(tabId, btnElement) {
 };
 
 // --- LOGICA DE PEDIDOS ---
-let lastMaxOrderId = null;
-
-function playNotificationSound() {
-    try {
-        const context = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // Primer tono (La5)
-        const osc1 = context.createOscillator();
-        const gain1 = context.createGain();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(880, context.currentTime);
-        gain1.gain.setValueAtTime(0.15, context.currentTime);
-        gain1.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.4);
-        osc1.connect(gain1);
-        gain1.connect(context.destination);
-        osc1.start();
-        osc1.stop(context.currentTime + 0.45);
-        
-        // Segundo tono (Mi6)
-        const osc2 = context.createOscillator();
-        const gain2 = context.createGain();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(1320, context.currentTime + 0.12);
-        gain2.gain.setValueAtTime(0.15, context.currentTime + 0.12);
-        gain2.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.52);
-        osc2.connect(gain2);
-        gain2.connect(context.destination);
-        osc2.start(context.currentTime + 0.12);
-        osc2.stop(context.currentTime + 0.6);
-    } catch (e) {
-        console.warn("No se pudo sintetizar el sonido de notificación:", e);
-    }
-}
-
-window.loadAdminOrders = async function(isPolling = false) {
+window.loadAdminOrders = async function() {
     try {
         const res = await fetch(`${API_URL}/admin/orders`);
         if (!res.ok) return;
-        const orders = await res.json();
-        
-        // Detectar nuevos pedidos mediante ID máximo
-        if (orders.length > 0) {
-            const maxId = Math.max(...orders.map(o => o.id));
-            if (lastMaxOrderId !== null && maxId > lastMaxOrderId) {
-                playNotificationSound();
-                if (window.showToast) {
-                    window.showToast("🔔 ¡Nuevo pedido registrado en la tienda!", "success");
-                }
-            }
-            lastMaxOrderId = maxId;
-        } else {
-            lastMaxOrderId = 0;
-        }
-        
-        adminState.orders = orders;
+        adminState.orders = await res.json();
         applyOrdersFilterAndSearch();
     } catch (err) {
         console.error("Error loading orders:", err);
     }
 };
-
-// Polling automático cada 40 segundos en segundo plano
-setInterval(() => {
-    if (localStorage.getItem('adminToken')) {
-        window.loadAdminOrders(true);
-    }
-}, 40000);
 
 function renderAdminOrders(orders) {
     const tbody = document.getElementById('orders-table-body');
